@@ -1,0 +1,19 @@
+<% for (const item of items) { %>
+<a href="<%= item.path %>" class="sp-card">
+  <div>
+    <div class="sp-card-meta">
+      <% if (item.categories && item.categories.length > 0) { %>
+        <span class="sp-card-tag"><%= item.categories[0] %></span>
+      <% } %>
+      <span class="sp-card-date">
+        <%= new Date(item.date).getFullYear() %>
+      </span>
+    </div>
+    <div class="sp-card-title"><%= item.title %></div>
+    <% if (item.description) { %>
+      <div class="sp-card-desc"><%= item.description %></div>
+    <% } %>
+  </div>
+  <span class="sp-card-arrow">→</span>
+</a>
+<% } %>

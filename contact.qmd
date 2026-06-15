@@ -1,0 +1,75 @@
+---
+title: "Contact"
+format:
+  html:
+    css: styles.css
+    toc: false
+    page-layout: full
+---
+
+```{=html}
+<!-- ============ NAVBAR ============ -->
+<nav class="sp-nav">
+  <a href="/" class="sp-nav-name">Saroj Pathak</a>
+  <ul class="sp-nav-links">
+    <li><a href="/research.html">Research</a></li>
+    <li><a href="/tools.html">Tools</a></li>
+    <li><a href="/about.html">About</a></li>
+    <li><a href="/contact.html" class="sp-nav-active">Contact</a></li>
+  </ul>
+</nav>
+
+<!-- ============ CONTACT CONTENT ============ -->
+<main class="sp-contact">
+
+  <div class="sp-about-header">
+    <span class="sp-hero-label">Contact</span>
+    <h1 class="sp-about-title">Get in touch</h1>
+  </div>
+
+  <div class="sp-contact-body">
+
+    <p class="sp-contact-lead">
+      For consulting enquiries, research collaboration, or to discuss 
+      a specific question about Nepal's public finance and governance 
+      data — reach me directly by email.
+    </p>
+
+    <a href="mailto:your@email.com" class="sp-contact-email">
+      your@email.com
+    </a>
+
+    <div class="sp-contact-elsewhere">
+      <span class="sp-section-label">Elsewhere</span>
+      <div class="sp-contact-links">
+        <a href="https://github.com/yourusername" target="_blank" class="sp-contact-link">
+          <span class="sp-contact-link-label">GitHub</span>
+          <span class="sp-contact-link-sub">Code and analysis repositories</span>
+        </a>
+        <a href="https://linkedin.com/in/yourprofile" target="_blank" class="sp-contact-link">
+          <span class="sp-contact-link-label">LinkedIn</span>
+          <span class="sp-contact-link-sub">Professional background</span>
+        </a>
+        <a href="https://rpubs.com/sarojpathak" target="_blank" class="sp-contact-link">
+          <span class="sp-contact-link-label">RPubs</span>
+          <span class="sp-contact-link-sub">Earlier and exploratory work</span>
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="sp-about-rule"><hr></div>
+
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer class="sp-footer">
+  <span class="sp-footer-name">Saroj Pathak · Kathmandu, Nepal</span>
+  <ul class="sp-footer-links">
+    <li><a href="mailto:your@email.com">Email</a></li>
+    <li><a href="https://github.com/yourusername" target="_blank">GitHub</a></li>
+    <li><a href="https://linkedin.com/in/yourprofile" target="_blank">LinkedIn</a></li>
+  </ul>
+</footer>
+```

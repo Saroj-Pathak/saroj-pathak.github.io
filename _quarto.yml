@@ -1,0 +1,22 @@
+project:
+  type: website
+  output-dir: _site
+
+website:
+  title: "Saroj Pathak"
+  site-url: "https://sarojpathak.github.io"
+  description: "Data-driven analysis of Nepal's public finance, governance, and political economy."
+  navbar: false
+
+format:
+  html:
+    theme: none
+    css: styles.css
+    toc: false
+    page-layout: full
+    grid:
+      sidebar-width: 0px
+      margin-width: 0px
+
+execute:
+  freeze: auto

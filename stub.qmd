@@ -1,0 +1,8 @@
+---
+title: "Financing Basic Education: A Lens of Student-Teacher Ratio"
+date: 2025-03-10
+description: "Federal conditional grants for basic education are allocated by teacher headcount — not student need. Madhesh Province, with the highest student concentration, is structurally underfunded."
+categories: [Education]
+---
+
+<!-- migrate content from StratGov here -->
