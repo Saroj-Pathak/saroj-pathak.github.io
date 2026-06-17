@@ -1,0 +1,20 @@
+---
+title: "Tools"
+page-layout: full
+toc: false
+format:
+  html:
+    css: styles.css
+    include-before-body: "/nav.html"
+listing:
+  - id: tools-listing
+    contents: "../tools/**/*.qmd"
+    type: grid
+    sort: "title asc"
+    fields: [image, title, description]
+---
+
+## Tools
+
+::: {#tools-listing}
+:::

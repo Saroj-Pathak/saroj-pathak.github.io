@@ -1,0 +1,23 @@
+---
+title: "Education Conditional Grant Simulator"
+description: "Interactive tool for exploring how Nepal's education conditional grant formula allocates funds across local governments."
+categories: [Education, Simulation]
+image: "/tools/education-simulator/cover.png"
+format:
+  html:
+    css: /styles.css
+    page-layout: full
+    toc: false
+    include-before-body: "/nav.html"
+---
+
+::: {.tool-fullscreen}
+```{=html}
+<iframe 
+  src="https://saroj-pathak-education-simulator.share.connect.posit.cloud/" 
+  width="100%" 
+  height="900" 
+  style="border: 1px solid var(--border); border-radius: 8px;">
+</iframe>
+```
+:::
