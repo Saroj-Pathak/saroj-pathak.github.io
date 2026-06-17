@@ -1,5 +1,6 @@
 ---
-pagetitle: "home"
+title: " "
+pagetitle: "Work & Approach"
 format:
   html:
     css: styles.css
