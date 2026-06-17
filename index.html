@@ -20,132 +20,221 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
-.display.math{display: block; text-align: center; margin: 0.5rem auto;}
 </style>
 
 
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
 <script src="site_libs/clipboard/clipboard.min.js"></script>
-<script src="site_libs/quarto-html/tabby.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<link href="./favicon.ico" rel="icon">
+<script src="site_libs/quarto-listing/list.min.js"></script>
+<script src="site_libs/quarto-listing/quarto-listing.js"></script>
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/axe/axe-check.js" type="module"></script>
 <script src="site_libs/quarto-html/popper.min.js"></script>
 <script src="site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="site_libs/quarto-html/anchor.min.js"></script>
 <link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="site_libs/quarto-html/light-border.css" rel="stylesheet">
-<link href="site_libs/quarto-html/quarto-html-734cb40618f438257b19a1e532635a32.min.css" rel="stylesheet" append-hash="true" data-mode="light">
 <link href="site_libs/quarto-html/quarto-syntax-highlighting-587c61ba64f3a5504c4d52d930310e48.css" rel="stylesheet" id="quarto-text-highlighting-styles">
-<meta name="description" content="Data-driven analysis of Nepal's public finance, governance, and political economy — with a focus on subnational fiscal systems and intergovernmental transfers.">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-ff63373b1067ca6f91cf1456aa1f00a2.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script>
 
+  window.document.addEventListener("DOMContentLoaded", function (_event) {
+    const listingTargetEl = window.document.querySelector('#listing-recent-research .list');
+    if (!listingTargetEl) {
+      // No listing discovered, do not attach.
+      return; 
+    }
+
+    const options = {
+      valueNames: ['listing-title','listing-date','listing-description',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-file-modified-sort'] }],
+      
+      searchColumns: [],
+    };
+
+    window['quarto-listings'] = window['quarto-listings'] || {};
+    window['quarto-listings']['listing-recent-research'] = new List('listing-recent-research', options);
+
+    if (window['quarto-listing-loaded']) {
+      window['quarto-listing-loaded']();
+    }
+  });
+
+  window.addEventListener('hashchange',() => {
+    if (window['quarto-listing-loaded']) {
+      window['quarto-listing-loaded']();
+    }
+  })
+  </script>
+<meta name="description" content="Data-driven analysis of Nepal's public finance, governance, and political economy.">
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
 <link rel="stylesheet" href="styles.css">
 </head>
 
-<body>
+<body class="quarto-light">
 
-
-
-
-
-<!-- ============ NAVBAR ============ -->
+<div id="quarto-search-results"></div>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-full">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    
+<!-- main -->
+<main class="content column-page" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block"></header>
 <nav class="sp-nav">
-  <a href="./" class="sp-nav-name">Home</a>
-  <ul class="sp-nav-links">
-    <li><a href="./research.html">Research</a></li>
-    <li><a href="./tools.html">Tools</a></li>
-    <li><a href="./about.html">About</a></li>
-    <li><a href="./contact.html">Contact</a></li>
-  </ul>
-</nav>
+    <a href="./" class="sp-nav-logo">Home</a>
+    <ul class="sp-nav-links">
+      <li><a href="./blogs.html">Blogs</a></li>
+      <li><a href="./tools.html">Tools</a></li>
+      <li><a href="./about.html">About</a></li>
+      <li><a href="./contact.html">Contact</a></li>
+    </ul>
+  </nav>
 
-<!-- ============ HERO ============ -->
-<section class="sp-hero">
-  <span class="sp-hero-label">Public Finance &amp; Policy Analytics · Nepal</span>
-  <h1 class="sp-hero-name">Saroj Pathak</h1>
-  <p class="sp-hero-descriptor">
-    I analyse Nepal's fiscal and governance data to support better 
-    public decisions — turning <em>administrative records governments 
-    produce but rarely interrogate</em> into evidence that decision-makers 
-    can act on.
-  </p>
-  <a href="./research.html" class="sp-hero-cta">
-    View research &nbsp;→
-  </a>
+
+
+
+<div class="sp-hero">
+<div class="sp-hero-left">
+<p><span class="sp-hero-eyebrow">Public Finance &amp; Policy Analytics · Nepal</span></p>
+<section id="nepals-federal-money.-does-it-go-where-its-needed" class="level1 sp-hero-headline">
+<h1 class="sp-hero-headline">Nepal’s federal money. Does it go where it’s needed?</h1>
+<p>I analyse Nepal’s fiscal and governance data to support better public decisions — turning <em>administrative records governments produce but rarely interrogate</em> into evidence that decision-makers can act on.</p>
+<p><span class="sp-hero-byline">Saroj Pathak · Kathmandu</span></p>
+<p><a href="./research.html"><span class="sp-btn-primary">View blogs →</span></a> <a href="./tools.html"><span class="sp-btn-secondary">Interactive tools</span></a></p>
 </section>
-
-<!-- ============ DIVIDER ============ -->
-<div class="sp-rule"><hr></div>
-
-<!-- ============ RECENT RESEARCH ============ -->
-<section class="sp-research">
-  <div class="sp-section-header">
-    <h2 class="sp-section-title anchored">Recent Research</h2>
-    <a href="./research.html" class="sp-view-all">All briefs →</a>
-  </div>
-
-  <div class="sp-cards">
-<div id="recent-research">
+</div>
+<div class="sp-hero-right">
+<div class="sp-stat-card">
+<p><span class="sp-stat-number">4.7×</span></p>
+<p>gap between highest and lowest per-capita grant allocation across Nepal’s 753 local governments</p>
+<p><span class="sp-stat-source">FY 2083–84 · FCGO allocation data</span></p>
+</div>
+<div class="sp-stat-card">
+<p><span class="sp-stat-number">r ≈ 0</span></p>
+<p>correlation between education conditional grant and student-teacher ratio — the formula ignores actual need</p>
+<p><span class="sp-stat-source">Ministry of Education · CBS 2021</span></p>
+</div>
+<div class="sp-stat-card">
+<p><span class="sp-stat-number">98×</span></p>
+<p>the government’s green tax projection versus first-year actual collections — a forensic budget finding</p>
+<p><span class="sp-stat-source">FCGO · Budget Speech 2083–84</span></p>
+</div>
+</div>
+</div>
+<hr>
+<section id="recent-research" class="level2 sp-section-header">
+<h2 class="anchored" data-anchor-id="recent-research">Recent research</h2>
+<p><a href="./research.html" class="sp-view-all">All briefs →</a></p>
+</section>
+<div id="listing-recent-research" class="quarto-listing quarto-listing-container-grid">
+<div class="list grid quarto-listing-cols-3">
 
 </div>
-  </div>
+<div class="listing-no-matching d-none">No matching items</div>
+</div>
+<hr>
+<div class="sp-focus">
+<p><span class="sp-section-label">What I work on</span></p>
+<div class="sp-focus-grid">
+<section id="public-finance-fiscal-systems" class="level4 sp-focus-item">
+<h4 class="anchored" data-anchor-id="public-finance-fiscal-systems">Public Finance &amp; Fiscal Systems</h4>
+<p>Quantitative analysis of intergovernmental fiscal transfers, budget credibility, and subnational public finance using administrative and fiscal data to understand whether fiscal systems allocate resources equitably and achieve their stated policy objectives.</p>
 </section>
-
-<!-- ============ DIVIDER ============ -->
-<div class="sp-rule"><hr></div>
-
-<!-- ============ FOCUS AREAS ============ -->
-<section class="sp-focus">
-  <span class="sp-section-label">What I work on</span>
-  <div class="sp-focus-grid">
-
-    <div class="sp-focus-item">
-      <span class="sp-focus-item-label">01</span>
-      <div class="sp-focus-item-title">Public Finance &amp; Fiscal Transfers</div>
-      <p class="sp-focus-item-desc">
-        Analysis of intergovernmental conditional grants, subnational 
-        budget allocation, and equity in federal resource distribution 
-        across Nepal's 753 local governments.
-      </p>
-    </div>
-
-    <div class="sp-focus-item">
-      <span class="sp-focus-item-label">02</span>
-      <div class="sp-focus-item-title">Governance &amp; Decentralisation</div>
-      <p class="sp-focus-item-desc">
-        How federal policy intent translates — or fails to translate — 
-        into subnational outcomes. Focus on Nepal's post-2015 federal 
-        transition and its implementation gaps.
-      </p>
-    </div>
-
-    <div class="sp-focus-item">
-      <span class="sp-focus-item-label">03</span>
-      <div class="sp-focus-item-title">Electoral &amp; Political Analytics</div>
-      <p class="sp-focus-item-desc">
-        Constituency-level diagnostic analysis of voter behaviour, 
-        party fragmentation, and electoral volatility to support 
-        evidence-based campaign strategy.
-      </p>
-    </div>
-
-  </div>
+<section id="human-development-analytics" class="level4 sp-focus-item">
+<h4 class="anchored" data-anchor-id="human-development-analytics">Human Development Analytics</h4>
+<p>Analysis of health financing, education outcomes and household welfare using survey microdata, administrative records, fiscal data to examine whether public services reach populations with greatest need.</p>
 </section>
-
-<!-- ============ FOOTER ============ -->
-<footer class="sp-footer">
-  <span class="sp-footer-name">Saroj Pathak · Kathmandu, Nepal</span>
-  <ul class="sp-footer-links">
-    <li><a href="mailto:your@email.com">Email</a></li>
-    <li><a href="https://github.com/yourusername" target="_blank">GitHub</a></li>
-    <li><a href="https://linkedin.com/in/yourprofile" target="_blank">LinkedIn</a></li>
-  </ul>
-</footer>
+<section id="political-economy-electoral-analytics" class="level4 sp-focus-item">
+<h4 class="anchored" data-anchor-id="political-economy-electoral-analytics">Political Economy &amp; Electoral Analytics</h4>
+<p>Constituency-level analysis of voter behaviour, political competitions, and policy incentives using electoral and demographic data to understand how politics shapes decision-making.</p>
+</section>
+</div>
+</div>
 
 
+
+
+</main> <!-- /main -->
+<div class="sp-footer-wrap">
+    <footer class="sp-footer">
+      <div class="sp-footer-left">
+        <span class="sp-footer-name">Saroj Pathak</span>
+        <span class="sp-footer-location">Kathmandu, Nepal</span>
+      </div>
+      <ul class="sp-footer-links">
+        <li><a href="mailto:your@email.com">Email</a></li>
+        <li><a href="https://github.com/saroj-pathak" target="_blank">GitHub</a></li>
+        <li><a href="https://linkedin.com/in/yourprofile" target="_blank">LinkedIn</a></li>
+      </ul>
+      <!-- <span class="sp-footer-copy">Analysis is independent. Views are my own.</span> -->
+    </footer>
+  </div>
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
-    const tabsets =  window.document.querySelectorAll(".panel-tabset-tabby")
-    tabsets.forEach(function(tabset) {
-      const tabby = new Tabby('#' + tabset.id);
-    });
     const icon = "";
     const anchorJS = new window.AnchorJS();
     anchorJS.options = {
@@ -217,7 +306,7 @@ ul.task-list li input[type="checkbox"] {
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/saroj-pathak\.github\.io");
+        var filterRegex = new RegExp("https:\/\/Saroj-Pathak\.github\.io\/website-saroj\/");
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }
@@ -244,7 +333,7 @@ ul.task-list li input[type="checkbox"] {
         },
         interactive: true,
         interactiveBorder: 10,
-        theme: 'light-border',
+        theme: 'quarto',
         placement: 'bottom-start',
       };
       if (contentFn) {
@@ -544,6 +633,7 @@ ul.task-list li input[type="checkbox"] {
     }
   });
   </script>
+</div> <!-- /content -->
 
 
 

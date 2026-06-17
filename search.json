@@ -1,16 +1,37 @@
 [
   {
+    "objectID": "stub.html",
+    "href": "stub.html",
+    "title": "Financing Basic Education: A Lens of Student-Teacher Ratio",
+    "section": "",
+    "text": "Home\n    \n      Blogs\n      Tools\n      About\n      Contact"
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Nepal’s federal money. Does it go where it’s needed?",
+    "section": "",
+    "text": "Home\n    \n      Blogs\n      Tools\n      About\n      Contact"
+  },
+  {
+    "objectID": "index.html#recent-research",
+    "href": "index.html#recent-research",
+    "title": "Nepal’s federal money. Does it go where it’s needed?",
+    "section": "Recent research",
+    "text": "Recent research\nAll briefs →"
+  },
+  {
     "objectID": "contact.html",
     "href": "contact.html",
     "title": "Contact",
     "section": "",
-    "text": "Contact\n\n  \n    Contact\n    Get in touch\n  \n\n  \n\n    \n      For consulting enquiries, research collaboration, or to discuss \n      a specific question about Nepal's public finance and governance \n      data — reach me directly by email.\n    \n\n    \n      your@email.com\n    \n\n    \n      Elsewhere\n      \n        \n          GitHub\n          Code and analysis repositories\n        \n        \n          LinkedIn\n          Professional background\n        \n        \n          RPubs\n          Earlier and exploratory work"
+    "text": "Home\n    \n      Blogs\n      Tools\n      About\n      Contact\n    \n  \n\n\n\n\n\n\n  Saroj Pathak\n  \n    Research\n    Tools\n    About\n    Contact\n  \n\n\n\n\n\n  \n    Contact\n    Get in touch\n  \n\n  \n\n    \n      For consulting enquiries, research collaboration, or to discuss \n      a specific question about Nepal's public finance and governance \n      data — reach me directly by email.\n    \n\n    \n      your@email.com\n    \n\n    \n      Elsewhere\n      \n        \n          GitHub\n          Code and analysis repositories\n        \n        \n          LinkedIn\n          Professional background\n        \n        \n          RPubs\n          Earlier and exploratory work\n        \n      \n    \n\n  \n\n  \n\n\n\n\n\n  Saroj Pathak · Kathmandu, Nepal\n  \n    Email\n    GitHub\n    LinkedIn"
   },
   {
     "objectID": "about.html",
     "href": "about.html",
-    "title": "About",
+    "title": "",
     "section": "",
-    "text": "About\n\n  \n    About\n    The work and the approach\n  \n\n  \n\n    \n      What I do\n      \n        I work at the intersection of public data and policy decisions — taking \n        administrative and fiscal records that governments produce but rarely \n        interrogate, and turning them into evidence that decision-makers can \n        act on.\n      \n      \n        My focus is Nepal's intergovernmental fiscal system: how federal \n        resources flow to provincial and local governments, whether that flow \n        reflects stated policy priorities, and where the gaps between allocation \n        logic and actual outcomes are widest. I work across health, education, \n        agricultural policy, and electoral analytics — not because these are \n        separate interests, but because the same fiscal architecture shapes all \n        of them.\n      \n      \n        The clients and organisations I work with need more than charts — they \n        need a clear answer to a hard question. My work is oriented toward that \n        answer, not toward the data itself.\n      \n    \n\n    \n      How I work\n      \n        All analysis is produced in R and published as reproducible Quarto \n        documents. I work directly from primary sources — Ministry of Finance \n        budget data, MoFAGA conditional grant records, Election Commission \n        results, and household survey microdata — rather than aggregated \n        secondary sources.\n      \n      \n        I am especially interested in subnational variation: the patterns that \n        disappear when data is aggregated to the national level. Nepal's \n        federal system creates 753 units of observation. Most analysis uses \n        seven provinces. The most important findings tend to live in the \n        difference between those two scales.\n      \n    \n\n    \n      Background\n      \n        I am based in Kathmandu. My work on Nepal's fiscal decentralisation \n        has covered health workforce financing, basic education conditional \n        grants, out-of-pocket health expenditure, and electoral constituency \n        analysis. Earlier work includes trade policy — specifically \n        Nepal's sugarcane sector and import duty structures.\n      \n      \n        I am available for consulting engagements, research collaborations, \n        and analytical commissions. If your organisation needs someone who \n        can move between government budget documents and actionable \n        policy recommendations — and produce the analysis in between — \n        I would be glad to talk."
+    "text": "Home\n    \n      Blogs\n      Tools\n      About\n      Contact\n    \n  \n\n\n\n\n\n\n\n  \n    The work and the approach\n  \n\n  \n\n    \n      What I do\n      \n        I work at the intersection of public data and policy decisions — taking \n        administrative and fiscal records that governments produce but rarely \n        interrogate, and turning them into evidence that decision-makers can \n        act on.\n      \n      \n        My focus is Nepal's intergovernmental fiscal system: how federal \n        resources flow to provincial and local governments, whether that flow \n        reflects stated policy priorities, and where the gaps between allocation \n        logic and actual outcomes are widest. I work across health, education, \n        agricultural policy, and electoral analytics — not because these are \n        separate interests, but because the same fiscal architecture shapes all \n        of them.\n      \n      \n        The clients and organisations I work with need more than charts — they \n        need a clear answer to a hard question. My work is oriented toward that \n        answer, not toward the data itself.\n      \n    \n\n    \n      How I work\n      \n        All analysis is produced in R and published as reproducible Quarto \n        documents. I work directly from primary sources — Ministry of Finance \n        budget data, MoFAGA conditional grant records, Election Commission \n        results, and household survey microdata — rather than aggregated \n        secondary sources.\n      \n      \n        I am especially interested in subnational variation: the patterns that \n        disappear when data is aggregated to the national level. Nepal's \n        federal system creates 753 units of observation. Most analysis uses \n        seven provinces. The most important findings tend to live in the \n        difference between those two scales.\n      \n    \n\n    \n      Background\n      \n        I am based in Kathmandu. My work on Nepal's fiscal decentralisation \n        has covered health workforce financing, basic education conditional \n        grants, out-of-pocket health expenditure, and electoral constituency \n        analysis. Earlier work includes trade policy — specifically \n        Nepal's sugarcane sector and import duty structures.\n      \n      \n        I am available for consulting engagements, research collaborations, \n        and analytical commissions. If your organisation needs someone who \n        can move between government budget documents and actionable \n        policy recommendations — and produce the analysis in between — \n        I would be glad to talk."
   }
 ]
