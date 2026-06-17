@@ -1,5 +1,5 @@
 ---
-title: ""
+pagetitle: "Home"
 listing:
   - id: posts-home
     contents: "posts/**/*.qmd"

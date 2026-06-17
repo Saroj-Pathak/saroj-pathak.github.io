@@ -4,7 +4,7 @@ project:
 website:
   title: ""
   navbar: false
-  favicon: favicon.ico
+  favicon: favicon.svg
 
 format:
   html:
