@@ -1,0 +1,1180 @@
+---
+title: "Demystifying Conditional Grants for Salaries and allowances of health personel at local level"
+format:
+  html:
+    toc: true
+    toc-location: right
+    page-layout: full
+    fontsize: 21px
+    mainfont: "Gill Sans"
+    css: /styles.css
+knitr:
+    opts_chunk: 
+      dev: "ragg_png"
+categories: [health, budget]
+title-block-banner: "#efeff8cc" 
+title-block-banner-color: "#002147" 
+image: "/posts/public-health/post1_files/figure-html/fig-map-budget-primary-health-1.png"
+---
+
+```{r}
+#| echo: false
+#| warning: false
+
+options(scipen=999)
+
+library(tidyverse)
+library(echarts4r)
+library(janitor)
+library(ggthemes)
+library(gt)
+library(sf)
+library(gtsummary)
+library(gtExtras)
+library(ggiraph)
+library(glue)
+
+
+
+theme_set(theme_minimal(base_size = 34, base_family = "Gill Sans"))
+
+
+load("data/health.RData")
+
+map <- sf::read_sf("data/edited_nepal.geojson")
+
+lgbudget |> 
+  mutate(lg_code = as.character(code)) -> lgbudget
+
+lgbudget |> 
+  filter(budgetsubhead == "37001012") |>
+  filter(!ActivityCode %in% c("11.1.2.2530", "11.1.2.2534", "11.1.2.2559", "2.7.22.10901")) |>
+  group_by(lg_code, LgName, Province) |> 
+  summarise(
+    total_budget = sum(Budget),
+    total_expenditure = sum(expenditure),
+    .groups = "keep" ) |> 
+  ungroup() |> 
+  left_join(
+    pop.census |> 
+      select(2,3,4,lg_code),
+    by = "lg_code"
+  ) |>
+  mutate(
+    across(household:population, as.numeric)
+    ) |> 
+  mutate(
+    budgetPerpop = round(total_budget/population,2),
+    budgetPerHousehold = round(total_budget/household, 2)
+    ) -> budget.population
+
+
+
+lgbudget |> 
+  mutate(
+    Budget = round(Budget/100000,2),
+    expenditure = round(expenditure/100000,2)
+    ) -> lgbudget
+
+theme_map <- theme(
+      plot.title = element_text(
+        size = 24,
+        family = "Gill Sans",
+        hjust = 0.5
+      ),
+      plot.subtitle = element_text(
+        size = 12,
+        family = "Gill Sans",
+        hjust = 0.5
+      ),
+      plot.caption = element_text(
+        size = 8,
+        family = "Gill Sans",
+        hjust = 1
+      ),
+      legend.title = element_text(
+        size = 24,
+        family = "Gill Sans"
+      ),
+      legend.position = "bottom",
+      legend.justification.bottom = "center",
+      legend.direction = "horizontal",
+      legend.box.spacing = unit(0.1, "cm"),
+      legend.key.size = unit(4, "cm"),
+      legend.key.width = unit(3,"cm"),
+      legend.key.height = unit(0.4, "cm"),
+      legend.text = element_text(
+        size = 1)
+      )
+
+```
+
+
+## Overview
+
+Ministry of Health and Population is one of the biggest spender of federal Budget in Nepal. A significant portion of its budget constitutes conditional grants to 753 local governments. This data brief is an attempt to analyse and explore patterns and trends of budgetory allocation of conditional grants for salaries and allowances of health personel working at local level.
+
+## Basic Snapshot of the dataset
+
+The data used in this breif is of the FY80-81 and following is the provides allocation of conditional grants to local level in various heading.
+
+### Program wise expenses
+
+::: panel-tabset
+#### In value
+
+```{r}
+#| echo: false
+#| warning: false
+#| label: fig-program-value
+#| fig-cap: Total budget allocated for different heading under conditional grant for Local Level Government by Ministry of health
+#| fig-width: 12
+#| fig-height: 10
+
+lgbudget |> 
+  group_by(Program) |> 
+  summarise(total = sum(Budget)) |>
+  ungroup() |> 
+  mutate(total = round(total/100,2)) |> 
+  e_charts(Program) |> 
+  e_bar(total,
+        label = list(
+          show = T,
+          position = "right"
+        )) |> 
+
+  e_flip_coords() |> 
+  e_legend(show = F) |> 
+  e_grid(left = "35%") |> 
+  e_y_axis(
+    axisLabel = list(
+      width = 450,
+      overflow = "break"
+    )
+  ) |> 
+  e_title(
+    text = "स्वास्थ्य मन्त्रालय अन्तर्गत सञ्चालित कार्यक्रम र विनियोजित बजेट",
+    left = "center"
+    ) |> 
+  e_title(
+    subtext = "बजेट करोडमा",
+    bottom = 0,
+    left = "right"
+  ) |> 
+  e_tooltip()
+  
+
+```
+
+#### In Percent
+
+```{r}
+#| echo: false
+#| warning: false
+#| label: fig-program-prop
+#| fig-cap: Proportion of budget allocated for different heading under conditional grant for Local Level Government by Ministry of health
+#| fig-width: 12
+#| fig-height: 10
+
+lgbudget |> 
+  group_by(Program) |> 
+  summarise(total = sum(Budget)) |>
+  ungroup() |> 
+  mutate(total = round(total/100,2)) |> 
+  mutate(ratio = round(total/sum(total)*100,2)) |> 
+  e_charts(Program) |> 
+  e_bar(ratio,
+        label = list(
+          show = T,
+          position = "right",
+          formatter = "{@[0]}%"
+        )) |> 
+
+  e_flip_coords() |> 
+  e_legend(show = F) |> 
+  e_grid(left = "35%") |> 
+  e_y_axis(
+    axisLabel = list(
+      width = 450,
+      overflow = "break"
+    )
+  ) |> 
+  e_title(
+    text = "स्वास्थ्य मन्त्रालय अन्तर्गत सञ्चालित कार्यक्रम र विनियोजित बजेट",
+    left = "center"
+    ) |> 
+   e_title(
+    subtext = "प्रतिशतमा",
+    bottom = 0,
+    left = "right"
+  ) |> 
+  e_tooltip()
+  
+
+```
+:::
+
+<br>
+
+From the above charts we can deduce that significant size of budget is allocated in the Primary health Care (ie 69.27% which amounts to NPR 20 billion). Likewise, The next priority is set at Women and reproductive health program which amounts to 12.31% of total allocation.
+
+<br>
+
+```{r}
+#| echo: false
+#| warning: false
+#| fig-width: 12
+#| fig-height: 13
+
+lgbudget |> 
+  group_by(Program) |> 
+  summarise(totalB = sum(Budget),
+            totalE = sum(expenditure),
+            .groups = "drop") |> 
+  ungroup() |> 
+  mutate(ratio = totalE/totalB*100
+         ) |> 
+  mutate(SN = row_number(), .before =1) |> 
+  gt() |> 
+  cols_label(
+    totalB = 'Total Budget Allocated',
+    totalE = 'Total Expenditure'
+  ) |> 
+  tab_header(
+    title = 'Total budget allocated and total expenses made for budget-programs allocated for the Local Level Government of Ministry of Health',
+    subtitle = 'Data for the FY 2080-81'
+  ) |> 
+  opt_table_outline() |> 
+  gt_plt_bar_pct(
+    column = ratio,
+    labels = T
+  ) |> 
+  cols_label(
+    ratio = 'total expenses in %'
+  )
+
+
+
+
+
+```
+
+## Lets Look into budget allocation for "प्राथमिक स्वास्थ्य सेवा"
+
+The budget allocated under "प्राथमिक स्वस्थ्य सेवा" is the expenses to be incurred in salaries and various allowances for the health workers at health facilities at Local Level. The government guideline[^1] defines this (ie प्राथमिक स्वास्थ्य सेवा) Budget Sub Heading (No. 3700102) as following:
+
+[^1]: आर्थिक वर्ष २०८०-८१ मा स्थानिय तहहरुबाट सञ्चालन गरिने स्वास्थ्य तर्फका सशर्त अनुदन अन्तर्गतका कृयाकलापहरु सञ्चालन सम्बन्धी मार्गनिर्देशन, MoFAGA available at <https://www.mofaga.gov.np/detail/2997>
+
+::: {.callout-tip title="Defination of Budget Sub Heading No 3700102" icon="false"}
+**"स्थानिय तहका स्वास्थ्य शाखा, स्वस्थ्य चौकी, प्राथमिक स्वस्थ्य केन्द्र, अस्पताल तथा आयुर्वेद औषधालयहरुमा कार्यरत स्थायी कर्मचारीहरुको स्वीकृत दरवन्दी अनुसारको तलव, महंगी भत्ता र पोषाक भत्ता"**
+:::
+
+The @fig-spread-per-lg illustrates the distribution of budget allocation per LG (values in Lakhs) for the Budget Subheading 37001012 (ie प्राथमिक स्वास्थ्य सेवा). The text in red with the names of the LG represents the outlier[^2].
+
+[^2]: Here the outlier is calculated using the interquartile range (IQR) criterion
+
+```{r}
+#| echo: false
+#| warning: false
+#| label: fig-spread-per-lg
+#| fig-cap: Boxplot for total budget at each local level 
+#| fig-width: 12
+#| fig-height: 10
+
+lgbudget |> 
+  #filter(Program == "प्राथमिक स्वास्थ्य सेवा") |> 
+  filter(budgetsubhead == "37001012") |>
+  filter(!ActivityCode %in% c("11.1.2.2530", "11.1.2.2534", "11.1.2.2559", "2.7.22.10901")) |>
+  group_by(lg_code, LgName, Province) |> 
+  summarise(total = sum(Budget), .groups = "drop") |> 
+  mutate(porp = round(total/sum(total)*100,2)) |> 
+  mutate(lg_code = as.character(lg_code)) |> 
+  ggplot(
+    aes(x = Province,
+        y = total)
+  ) +
+  geom_boxplot(aes(fill = Province),
+    outlier.alpha = 0.5,
+    outlier.size = 2,
+    outlier.stroke = 1
+  ) +
+  geom_jitter(aes(color=Province), size=2, alpha=0.4, show.legend = F) +
+  labs(
+    color = " ") +
+  labs(
+    title = "Budget allocation per LG on Primary Health Service",
+    x = "",
+    y = "Total Budget",
+    caption = "Values in Lakhs"
+  ) +
+  #stat_summary(fun = "mean", geom = "point", shape = 2, size = 3, color = "blue")+
+  theme_classic() +
+  theme(
+    plot.title = element_text(
+      family = "Gill Sans",
+      hjust = 0.5,
+      face = "bold",
+      size = 20
+    ),
+    legend.position = "none",
+    axis.text = element_text(
+      family = "Gill Sans",
+      size = 12
+    ),
+    plot.caption = element_text(
+      family = "Gill Sans",
+      face = "italic"
+    ),
+    axis.title = element_text(
+      family = "Gill Sans"
+    )
+  )
+
+
+```
+
+As per the IQR critereon of identifying outlier, there exists 28 LG which are categorised as outlier; for the purpose of this data exercise only 4 (extreme outliers) observations are considered as outliers which includes budget allocated at Pokhara Metro, Birgunj Metro, Godavari Municipality and Bharatpur Metro.
+
+```{r}
+#| echo: false
+#| warning: false
+#| label: tbl-outlier-budget
+#| tbl-cap: List of LG which is identified as extreme outliers
+#| fig-width: 12
+
+library(rstatix)
+lgbudget |> 
+  #filter(Program == "प्राथमिक स्वास्थ्य सेवा") |> 
+  filter(budgetsubhead == "37001012") |>
+  filter(!ActivityCode %in% c("11.1.2.2530", "11.1.2.2534", "11.1.2.2559", "2.7.22.10901")) |>
+  group_by(lg_code, LgName, Province) |> 
+  summarise(total = sum(Budget), .groups = "drop") |> 
+  arrange(desc(total) ) |> 
+  mutate(sn = row_number(), .before = 1) |> 
+  identify_outliers(
+    variable = "total"
+  ) |> 
+  filter(is.extreme == T) |> 
+  select(1:5) |> 
+  gt() |> 
+  opt_table_outline()
+
+
+```
+
+## Proportion of budget allocation - Province wise
+
+```{r}
+#| echo: false
+#| warning: false
+#| label: fig-pie-province-budget
+#| fig-cap: Province wise proportion of budget allocation
+#| fig-width: 12
+#| fig-height: 9
+
+lgbudget |> 
+  #filter(Program == "प्राथमिक स्वास्थ्य सेवा") |> 
+  filter(budgetsubhead == "37001012") |>
+  filter(!ActivityCode %in% c("11.1.2.2530", "11.1.2.2534", "11.1.2.2559", "2.7.22.10901")) |>
+  group_by(Province) |> 
+  summarise(total = sum(Budget), .groups = "drop") |> 
+  mutate(proportion = round(total/sum(total)*100, 2)) |> 
+  e_charts(Province) |> 
+  e_pie(
+    total,
+    radius = c("40%", "60%"),
+    legend = F,
+    label = list(
+      show = TRUE,
+      position = "outside",
+      formatter = "{b}:{d}%"
+    )
+    ) |> 
+    e_title(
+      text = "Province wise proportion of Budget allocated (Primary Health Services)"
+    ) |> 
+    e_tooltip()
+
+```
+
+**Lets Look into what portion of population live in each Provinces**
+
+```{r}
+#| echo: false
+#| warning: false
+#| label: fig-bar-pop
+#| fig-cap: Proportion of total allocated budget against total population
+#| fig-width: 12
+#| fig-height: 9
+
+pop.census |> 
+  mutate(
+  across(c(3:6), as.numeric))|> 
+  group_by(province) |> 
+  summarise(total = sum(population), .groups = "drop") |> 
+  mutate(proportion_pop = round(total/sum(total)*100, 2)) |> 
+  rename("Province" = "province") |> 
+  mutate(Province = toupper(Province)) |> 
+  mutate(Province = case_when(
+        Province == "MADESH" ~ "MADHESH",
+        .default = Province)) |> 
+  left_join(
+    lgbudget |> 
+      filter(budgetsubhead == "37001012") |>
+      filter(!ActivityCode %in% c("11.1.2.2530", "11.1.2.2534", "11.1.2.2559", "2.7.22.10901")) |>
+      group_by(Province) |> 
+      summarise(total = sum(Budget), .groups = "drop") |> 
+      mutate(proportion = round(total/sum(total)*100, 2)) |> 
+      select(Province, proportion) |> 
+      mutate(Province = toupper(Province)),
+    by = "Province"
+  ) |> 
+  rename(
+    "Budget" = "proportion",
+    "Population" = "proportion_pop"
+  ) |>
+  pivot_longer(cols = c(3:4)) |> 
+  group_by(name) |> 
+  e_charts(Province) |> 
+  e_bar(
+    value,
+    label = list(
+      show = T,
+      position = "right",
+      formatter = "{@[0]}%"
+    )
+    ) |>
+  e_legend(
+    left = "right",
+    top = "middle",
+    orient = "vertical"
+  ) |> 
+  e_flip_coords() |> 
+  e_tooltip() |> 
+  e_title(
+    "Province wise proportion of total population",
+    subtext = "Data obtained from census (not adjusting current year)"
+  )
+
+```
+
+The @fig-bar-pop attempts to compare the budget allocation against the population in each province. The budget-to-population ratio appears balanced, except in Karnali and Gandaki provinces. Gandaki Province receives 12.21% of the total budget allocated under Budget Subhead 3700102, despite comprising only 8.42% of the total population. It would be interesting to explore whether there is a correlation between budget allocation and performance in various health indicators across provinces. For instance, how does Gandaki---where per capita budget allocation is high---compare to Bagmati, which has a lower per capita budget allocation relative to other provinces?
+
+It is important to note that Budget Subhead No. 3700102 covers health-related human resource costs at the local level. Ideally, the budget allocation should be proportional to the actual size of the health workforce in each local unit. Assuming a direct proportional relationship between budget allocation and the number of health workers, Gandaki and Karnali provinces would have the highest number of per capita health workers at the local level. Therefore, analyzing the relationship between per capita spending on local-level health workers and actual health outcomes would be a valuable exercise in optimizing government spending and improving efficiency at the outcome level.
+
+<br>
+
+## Budget Allocation in heat map !
+
+```{r}
+#| echo: false
+#| warning: false
+#| fig-width: 12
+#| fig-height: 10
+#| label: fig-map-budget-primary-health
+#| fig-cap: Heat map of budget allocation per LG on Primary Health Care
+
+
+
+lgbudget |> 
+  #filter(Program == "प्राथमिक स्वास्थ्य सेवा") |> 
+  filter(budgetsubhead == "37001012") |>
+  filter(!ActivityCode %in% c("11.1.2.2530", "11.1.2.2534", "11.1.2.2559", "2.7.22.10901")) |>
+  group_by(lg_code, LgName, Province) |> 
+  summarise(total = sum(Budget), .groups = "drop") |> 
+  mutate(porp = round(total/sum(total)*100,2)) |> 
+  mutate(lg_code = as.character(lg_code)) |> 
+  filter(!lg_code %in% c("80439201", "80222201", "80334401", "80331201")) -> for_map_budget
+
+
+
+map |> 
+  left_join(
+    for_map_budget, 
+    by = "lg_code"
+  ) |> 
+  ggplot()+
+  geom_sf(data = map,
+          aes(colour = "black"),
+          fill = "white")+
+   geom_sf(
+    aes(fill = total),
+    colour = "black",
+    linewidth = 0.2,
+    size = 0.25
+   ) +
+  scale_fill_distiller("",
+                       type = "seq",
+                       palette ="Spectral",
+                       guide = "coloursteps",
+                       breaks = seq(0, 700, 25),
+                       direction = -1,
+                       na.value = "grey",
+                       limits = c(0, 750)) +
+  scale_color_identity() +
+  theme_void()+
+  labs(title = "Budget Allocation for Per LG on Primary Health Care",
+          caption = "Values in lakh")+
+  theme_map +
+  theme(
+    legend.text = element_text(
+      size = 7
+    )
+  )
+
+
+
+
+```
+
+@fig-map-budget-primary-health above doesnt plot (in order not to skew the data) four LG identified as outlier above (ie Pokhara Metro, Birgunj Metro, Godavari Municipality and Bharatpur Metro).
+
+## Equity Analysis
+
+Lets make an attempt to evaluate whether the budget allocation is proportional to population size accross local level governments in Nepal.
+
+```{r}
+#| echo: false
+#| warning: false
+#| column: page
+#| label: fig-equity-analysis-lm
+#| fig-cap: Simple Linear Model of Population and total budget allocation for each local level 
+#| fig-width: 12
+#| fig-height: 10
+
+library(scales)
+library(ggpmisc)
+
+budget.population |> 
+  mutate(LgName = case_when(
+    LgName == "ठूलीभेरीनगरपालिका" ~ "ठूलीभेरी नगरपालिका",
+    .default = LgName
+  )) |> 
+  mutate(type = word(LgName, -1)) |> 
+  mutate(type = case_when(
+    type %in% c("उप-महानगरपालिका", "उपमहानगरपालिका") ~ "Sub-Metro",
+    type %in% c("गाँउपालिका", "गाउँपालिका", "गाउँपलिका","गाउंपालिका") ~ "Rural Municipality",
+    type == "महानगरपालिका" ~ "Metro",
+    type == "नगरपालिका" ~ "Municipality",
+    .default = type
+  )) |> 
+  mutate(type = as.factor(type)) -> budget.population
+
+
+
+budget.population |>
+  mutate(total_budget = total_budget) |>  
+  ggplot(aes(x = population, y = total_budget)) +
+  geom_point(
+    aes(
+      shape = type, color = type),
+      alpha = 0.6,
+      size = 5)+
+  geom_text(
+    data=subset(budget.population, type == "Metro"),
+    aes(population, total_budget, label = LgName),
+    alpha = 0.4
+    )+
+  scale_color_manual(values = c("#1f77b4", "#2ca02c", "#ff7f0e","black"
+  ))+
+  scale_y_continuous(labels = label_number(scale = 1/10000000, suffix = "Crore")) +
+  scale_x_continuous(labels = label_number(scale = 1/1000, suffix = "K"))+
+  stat_poly_line() +
+  stat_poly_eq(use_label("eq", "R2", sep = "*\"; \"*"))+
+  labs(
+    x = "Population (in 1000s)",
+    y = "Total Budget (in 10 million)",
+    title = "Population V. Total Budget"
+  ) +
+  theme(
+    legend.title = element_blank(),
+    legend.position = "none",
+     plot.title = element_text(
+      hjust = 0.5,
+      size = 25
+    ),
+    axis.text = element_text(
+      size = 17
+    ),
+    axis.title = element_text(
+      size = 15
+    )
+  )
+
+```
+
+@fig-equity-analysis-lm attempts to visualise the relationship between population (in 1000s) and total budget allocation (in 10 million). A linear regression line with a confidence interval is included to show the general trend between population size and budget allocation.
+
+Following are the key observations based on the chart:
+
+-   **Positive Correlation**: There is a **weak positive correlation** between population and budget allocation, as indicated by the regression line.
+
+-   **The low R² value**: the low R² value (0.11) suggests that population alone does not strongly explain budget allocation. Only **11% of the variation** in the budget is explained by population alone. Other factors (eg policy decisions, political considerations) could be at play.
+
+-   **The Curious Case of Six Metros**: Pokhara, Birgunj and Bharatpur recieve higher budget than predicted by the linear model based on the population size. Similarly, Lalitpur, Biratnagar and Kathmandu recieves significantly low amount of budget than prediction. This too further substantiates that (in this case Metros) population alone is not the main driver of budget allocation.
+
+-   **Explaining Linear Model and Coefficient** The regression equation shown in the plot is:$$y = 2.43 \times 10^{+7} + 80.5x$$
+
+    The intercept $$\beta_o = 2.43  \times  10^{+7}$$ represents the value of Total Budget if the population is **zero**. In this context we can presume that this value (24.3 million) is the bare minimum cost estimate for human resources regardless of the population.
+
+    The slope $$\beta_1 = 80.5$$ means for every additional 1000 people, the total budget increases by 80.5 million (or 8.05 Crores)
+
+**Lets see if there are any Patterns at Provinces**
+
+```{r}
+#| echo: false
+#| column: page
+#| warning: false
+#| label: fig-provinces-lm
+#| fig-cap: Linear Model (Total Budget V Population) at each local level for each provinces
+#| fig-width: 12
+#| fig-height: 10
+
+budget.population |>
+  mutate(total_budget = total_budget) |>  
+  ggplot(aes(x = population, y = total_budget)) +
+  geom_point(
+    aes(color = Province),
+      alpha = 0.6,
+      size = 5) +
+  scale_color_manual(values = c("#1E88E5", "#D81B60", "#FFC107", "#004D40", "#8E24AA", "#43A047", "#E64A19")) +
+  geom_text(
+    data=subset(budget.population, type == "Metro"),
+    aes(population, total_budget, label = LgName),
+    alpha = 0.4
+    )+
+  scale_y_continuous(labels = label_number(scale = 1/10000000, suffix = "Crore")) +
+  scale_x_continuous(labels = label_number(scale = 1/1000, suffix = "K"))+
+  stat_poly_line()+
+  stat_poly_eq(use_label("eq", "R2", sep = "*\"; \"*"))+
+  facet_wrap(~Province) +
+  labs(
+    x = "Population (in 1000s)",
+    y = "Total Budget (in 10 million)",
+    title = "Population V. Total Budget"
+  ) +
+  theme(
+    legend.title = element_blank(),
+    legend.position = "none",
+     plot.title = element_text(
+      hjust = 0.5,
+      size = 17
+    ),
+    axis.text = element_text(
+      size = 10
+    ),
+    axis.title = element_text(
+      size = 12
+    ),
+    strip.text = element_text(
+      size = 12
+    )
+  )
+
+```
+
+@fig-provinces-lm illustrates relationship between total budget allocated and population along with a simple linear model for each provinces. Following observations can be made:
+
+-   In Gandaki and Madhesh Province, the R² is singinificantly higher (at 0.52) than other Provinces. This implies that there is moderately strong positive correlation between population and total budget allocated in these Provinces. This also means that 52% of variance in budget allocation can be explained by the population.
+
+-   In Koshi and Sudur Paschim, the R² value is \< 0.01, this means population cannot be considered a predictor for total budget allocation.
+
+## Lets consider Budget Per Capita (for Primary Health Services at Local Level)
+
+```{r}
+#| echo: false
+#| warning: false
+#| column: page
+#| label: fig-map-per-capita-budget
+#| fig-cap: Heat map representing Per capita budget allocation for each LG
+
+
+map |>
+  left_join(
+    budget.population |>
+      select(lg_code, LgName, Province, budgetPerpop, budgetPerHousehold),
+    by = "lg_code"
+  ) |>
+  mutate(
+    budgetPerpop_capped = pmin(budgetPerpop, 3000), # Cap values at 3000
+    budget_category = case_when(
+      is.na(budgetPerpop) ~ "NA", # NA values remain NA
+      budgetPerpop > 3000 ~ "Above 3000", # Values above 3000 are categorized
+      .default = "Within Range" # Valid values (0-3000)
+    )
+  ) -> map.plot
+
+
+map.plot |>
+  
+  ggplot() +
+  geom_sf(
+    data = map.plot,
+    aes(colour = "black"),
+    fill = "white"
+  ) +
+  # **Use capped values for scale_fill_distiller()**
+  geom_sf_interactive(
+    aes(fill = budgetPerpop_capped,
+    tooltip = glue("budget-per-caipta: {budgetPerpop} <br> LG: {LgName}")),
+    colour = "black",
+    linewidth = 0.2,
+    size = 0.25
+  ) +
+  scale_fill_distiller(
+    "",
+    type = "seq",
+    palette = "Spectral",
+    guide = "coloursteps",
+    breaks = c(seq(0, 3000, 100)),
+    direction = -1,
+    na.value = "white",
+    limits = c(0, 3000) # Set limits to cap the scale
+  ) +
+  # **Overlay layer for values above 3000 (grey)**
+  geom_sf_interactive(
+    data = subset(map.plot, budgetPerpop > 3000),
+    fill = "grey",
+    aes(tooltip = glue("budget per capita: {budgetPerpop} <br> LG: {LgName}")),
+    colour = "black",
+    linewidth = 0.2,
+    size = 0.25
+  ) +
+  scale_color_identity() +
+  
+  labs(
+    title = "Per Capita Budget Allocation Per LG on Primary Health Services - Salaries and Allowances",
+    subtitle = "(Per capita spending on health workers at Local Level)",
+    caption = "LG with grey color code represent values more that NPR 3000 per capita") +
+  theme_void() +
+  theme_map +
+  guides(
+    size = 2
+  )+
+  theme(
+    legend.text = element_text(size = 5),
+    plot.title = element_text(size = ,
+      vjust = -2, margin = margin(t = 5, b = 10)
+    ),
+    plot.subtitle = element_text(
+      margin = margin(t = 5, b = 50)
+    ),
+    plot.title.position = "plot",
+    plot.margin = margin(t = 0, r = 0, b = 0, l = 0),
+    plot.caption = element_text(
+      face = "italic",
+      size = 8
+    )
+  ) -> plot.percapita
+
+girafe(
+  ggobj = plot.percapita
+)
+
+
+
+```
+
+::: panel-tabset
+### Province-wise
+
+```{r}
+#| echo: false
+#| warning: false
+#| label: fig-boxpot-percapita-budget
+#| fig-cap: Per Capita total Budget Allocation in 753 Local Governments of Nepal for Primary Health Services
+#| fig-width: 12
+#| fig-height: 9
+#| preview: true
+
+budget.population |> 
+  ggplot(
+    aes(x = Province,
+        y = budgetPerpop)
+  ) +
+  geom_boxplot(aes(fill = Province),
+    outlier.alpha = 0.5,
+    outlier.size = 2,
+    outlier.stroke = 1
+  ) +
+  geom_jitter(aes(color=Province), size=2, alpha=0.4, show.legend = F) +
+  labs(
+    color = " ") +
+  labs(
+    title = "Budget allocation per Capita in 753 LG on Primary Health Services",
+    x = "",
+    y = "Budget Allocation Per Capita"
+  ) +
+  #stat_summary(fun = "mean", geom = "point", shape = 2, size = 3, color = "blue")+
+  theme_classic() +
+  theme(
+    plot.title = element_text(
+      family = "Gill Sans",
+      hjust = 0.5,
+      face = "bold",
+      size = 20
+    ),
+    legend.position = "none",
+    axis.text = element_text(
+      family = "Gill Sans",
+      size = 12
+    ),
+    plot.caption = element_text(
+      family = "Gill Sans",
+      face = "italic"
+    ),
+    axis.title = element_text(
+      family = "Gill Sans"
+    )
+    )
+
+
+```
+
+### LG-Type
+
+```{r}
+#| echo: false
+#| warning: false
+#| label: fig-per-capita-lg-type
+#| fig-cap: Per Capita and Per Household Budget Allocation at different LG Types 
+#| fig-width: 12
+#| fig-height: 9
+
+budget.population |>
+  mutate(
+    type = case_when(
+      word(lg_census, -1) == "City" ~ word(lg_census, -2, -1),
+      .default = word(lg_census, -1)
+    )
+  ) |>
+  pivot_longer(
+    cols= 9:10
+  ) |> 
+  ggplot(
+    aes(x = type,
+        y = value)
+  ) +
+  geom_boxplot(aes(fill = type),
+    outlier.alpha = 0.5,
+    outlier.size = 2,
+    outlier.stroke = 1
+  ) +
+  ggplot2::facet_wrap(~name, dir = "v") +
+  geom_jitter(aes(color=type), size=2, alpha=0.4, show.legend = F) +
+  
+  labs(
+    color = " ") +
+  labs(
+    title = "Per household Budget allocation in 753 LG on Primary Health Services",
+    x = "",
+    y = "Per Household Budget Allocation"
+  ) +
+  #stat_summary(fun = "mean", geom = "point", shape = 2, size = 3, color = "blue")+
+  theme_classic() +
+  theme(
+    plot.title = element_text(
+      family = "Gill Sans",
+      hjust = 0.5,
+      face = "bold",
+      size = 20
+    ),
+    legend.position = "none",
+    axis.text = element_text(
+      family = "Gill Sans",
+      size = 12
+    ),
+    plot.caption = element_text(
+      family = "Gill Sans",
+      face = "italic"
+    ),
+    axis.title = element_text(
+      family = "Gill Sans"
+    )
+  )
+  
+
+```
+
+### Per Capita household
+
+```{r}
+#| echo: false
+#| warning: false
+#| label: fig-boxpot-per-budget
+#| fig-cap: Per household total Budget Allocation in 753 Local Governments of Nepal for Primary Health Services
+#| fig-width: 12
+#| fig-height: 9
+
+
+budget.population |> 
+  ggplot(
+    aes(x = Province,
+        y = budgetPerHousehold)
+  ) +
+  geom_boxplot(aes(fill = Province),
+    outlier.alpha = 0.5,
+    outlier.size = 2,
+    outlier.stroke = 1
+  ) +
+  geom_jitter(aes(color=Province), size=2, alpha=0.4, show.legend = F) +
+  labs(
+    color = " ") +
+  labs(
+    title = "Per household Budget allocation in 753 LG on Primary Health Services",
+    x = "",
+    y = "Per Household Budget Allocation"
+  ) +
+  #stat_summary(fun = "mean", geom = "point", shape = 2, size = 3, color = "blue")+
+  theme_classic() +
+  theme(
+    plot.title = element_text(
+      family = "Gill Sans",
+      hjust = 0.5,
+      face = "bold",
+      size = 20
+    ),
+    legend.position = "none",
+    axis.text = element_text(
+      family = "Gill Sans",
+      size = 12
+    ),
+    plot.caption = element_text(
+      family = "Gill Sans",
+      face = "italic"
+    ),
+    axis.title = element_text(
+      family = "Gill Sans"
+    )
+  )
+
+
+
+```
+:::
+
+The @fig-boxpot-percapita-budget clearly shows that Gandaki Province exhibits the highest variation in per capita budget allocation, while Madhesh Province has the least variation, with a generally lower per capita budget. Similarly, @fig-per-capita-lg-type highlights that Rural Municipalities (Gaunpalika) have the greatest variation in both per capita and per household budget allocation. This could be attributed to differences in geographical terrain and the relatively smaller populations in some rural municipalities, which may explain the presence of outliers and a portion of the overall variation within this category.
+
+Moreover, when considering Per Household Budget Allocation instead of per capita, @fig-boxpot-per-budget demonstrates an even higher variation across almost all provinces, particularly in Karnali, Sudurpaschim, Bagmati, and Gandaki, compared to per capita allocation.
+
+### Population v per capita budget
+
+```{r}
+#| echo: false
+#| warning: false
+#| column: page
+#| label: fig-perCapitaVPop
+#| fig-cap: Per Capita budget V Population
+#| fig-width: 12
+#| fig-height: 8
+
+budget.population |> 
+  ggplot( aes(x = population, y = budgetPerpop, color = type)) +
+  geom_point_interactive(
+    alpha = 0.6, aes(
+      shape = type,
+      data_id = lg_code,
+      tooltip = glue("LG: {LgName} <br>  PerCapita Budget: {budgetPerpop} <br> Population: {(population/1000)} Thousand "
+      )
+      ),
+      hover_nearest = T,
+    size = 5
+    ) +
+  geom_smooth(method = "lm", se = FALSE, color = "black") +
+  labs(
+    title = "Per Capita Budget vs. Population",
+    x = "Population",
+    y = "Per Capita Budget"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.title = element_blank(),
+    legend.position = "top",
+     plot.title = element_text(
+      hjust = 0.5
+    )
+  ) -> gg_point
+
+girafe(
+  ggobj = gg_point,
+  options = list(
+    opts_tooltip(use_fill = TRUE)
+  ))
+
+```
+
+As expected @fig-perCapitaVPop clearly illustrates the lower per capita budget for Local Level with higher population (Metro) and higher for Rural Municipalities. It is interesting to note that the Pokhara Municipality which recives exceptionally higher volume of budget under this heading also has relatively lower per capita budget. However, if other metro such as Kathmandu is to match the budget of Pokhara (based on population) there will be significant increase in budget demand.
+
+The higest variation in data is attributed to the Rural Municipalities. In the following figure only Rural Municipalities is plotted @fig-perCapita-rm.
+
+```{r}
+#| echo: false
+#| warning: false
+#| column: page
+#| label: fig-perCapita-rm
+#| fig-cap: Per Capita budget V population for Rural municipalities in all Provinces
+#| fig-width: 12
+#| fig-height: 8
+
+
+
+budget.population |> 
+  filter(type == "Rural Municipality") |> 
+  ggplot( aes(x = population, y = budgetPerpop, color = Province)) +
+  geom_point_interactive(
+    alpha = 0.6, aes(
+      data_id = lg_code,
+      tooltip = glue("LG: {LgName} <br>  PerCapita Budget: {budgetPerpop} <br> Population: {(population/1000)} Thousand <br> Province: {Province}"
+      )
+      ),
+      hover_nearest = F,
+    size = 5
+    ) +
+   scale_color_manual(values = c("#1E88E5", "#892147", "#FFC107", "#004D40", "#8E24AA", "#43A047", "#E64A19")) +
+  geom_smooth(method = "lm", se = FALSE, color = "black") +
+  labs(
+    title = "Per Capita Budget vs. Population for Rural municipalities",
+    x = "Population",
+    y = "Per Capita Budget"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.title = element_blank(),
+    legend.position = "top",
+     plot.title = element_text(
+      hjust = 0.5
+    )
+  ) -> gg_point_rm
+
+
+girafe(
+  ggobj = gg_point_rm,
+  options = list(
+    opts_tooltip(use_fill = TRUE),
+    opts_zoom(max = 10)
+  )
+  )
+
+
+```
+
+The higher Per Capita Budget are in the mountainous Local Level mostly of Gandaki Province (Mustang and Manang) and of Karnali Province. If we are to discard any Local Level with more than 3000 per capita budget (assuming these are mostly mountanous LG with disproportionately lower population) the plot will appear as follow:
+
+::: panel-tabset
+### Rural Municipality
+
+```{r}
+#| echo: false
+#| warning: false
+#| column: page
+#| label: fig-perCapita-rm-scaled
+#| fig-cap: Per Capita budget V population for Rural municipalities in all Provinces (for per capita budget less than 3000 NPR)
+#| fig-width: 12
+#| fig-height: 8
+
+budget.population |> 
+  filter(type == "Rural Municipality") |> 
+  filter(budgetPerpop < 3000) |> 
+  ggplot( aes(x = population, y = budgetPerpop, color = Province)) +
+  geom_point_interactive(
+    alpha = 0.6, aes(
+      data_id = lg_code,
+      tooltip = glue("LG: {LgName} <br>  PerCapita Budget: {budgetPerpop} <br> Population: {(population/1000)} Thousand <br> Province: {Province}"
+      )
+      ),
+      hover_nearest = F,
+    size = 5
+    ) +
+   scale_color_manual(values = c("#1E88E5", "#D81B60", "#FFC107", "#004D40", "#8E24AA", "#43A047", "#E64A19")) +
+  geom_smooth(method = "lm", se = FALSE, color = "black") +
+  labs(
+    title = "Per Capita Budget vs. Population for Rural municipalities",
+    x = "Population",
+    y = "Per Capita Budget"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.title = element_blank(),
+    legend.position = "top",
+     plot.title = element_text(
+      hjust = 0.5
+    )
+  ) -> gg_point_rm_scale
+
+
+girafe(
+  ggobj = gg_point_rm_scale,
+  options = list(
+    opts_tooltip(use_fill = TRUE),
+    opts_zoom(max = 10)
+  )
+  )
+
+```
+
+### Municipality
+
+```{r}
+#| echo: false
+#| warning: false
+#| column: page
+#| label: fig-perCapita-mun
+#| fig-cap: Per Capita budget V population for municipalities in all Provinces
+#| fig-width: 12
+#| fig-height: 8
+
+budget.population |> 
+  filter(type == "Municipality") |> 
+  filter(budgetPerpop < 3000) |> 
+  ggplot( aes(x = population, y = budgetPerpop, color = Province)) +
+  geom_point_interactive(
+    alpha = 0.6, aes(
+      data_id = lg_code,
+      tooltip = glue("LG: {LgName} <br>  PerCapita Budget: {budgetPerpop} <br> Population: {(population/1000)} Thousand <br> Province: {Province}"
+      )
+      ),
+      hover_nearest = F,
+    size = 5
+    ) +
+   scale_color_manual(values = c("#1E88E5", "#D81B60", "#FFC107", "#004D40", "#8E24AA", "#43A047", "#E64A19")) +
+  geom_smooth(method = "lm", se = FALSE, color = "black") +
+  labs(
+    title = "Per Capita Budget vs. Population for Rural municipalities",
+    x = "Population",
+    y = "Per Capita Budget"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.title = element_blank(),
+    legend.position = "top",
+     plot.title = element_text(
+      hjust = 0.5
+    )
+  ) -> gg_point_mun
+
+
+girafe(
+  ggobj = gg_point_mun,
+  options = list(
+    opts_tooltip(use_fill = TRUE),
+    opts_zoom(max = 10)
+  )
+  )
+
+
+```
+:::
+
+@fig-perCapita-rm-scaled provides a better prospective into the relationship between the population and per capita budget; with increase in volume of population the variation around the trendline seems to be reduced. However, such reduction aint as encouraging; for example Joshipur Rural Municipality of Sudur Psachim with population 37 thousands and 2 hundred people have a per capita budget of NPR 393 per person, while another Palhinandan rural municipality with similar population has NPR 877 per capita budget. Similar phenomenon can be observed among Municipalities as illustrated in @fig-perCapita-mun
+
+## Key Takeaways
+
+-   The primary health service (ie प्राथमिक स्वास्थ्य सेवा) comprises the highest budgetary allocation (20.64 billion) among conditional loan provided which provided to Local Level for health related expenses. The government guideline makes it clear that the expenses under this heading is related to salary and allowances for the human resources working at the heath facilities at local level. **The data exercise makes it very clear that budgetary allocation under this subheading is not strong function of population**
+
+-   Subnational level health indicator (LG level) could be used to evaluate the efficiency of budgetary allocation.
+
+-   The policy questions :
+
+    -   The data suggests that there is a high variations in the number of health personnel employed at local level (everything remaining constant, budget volume is fundamentally a function of number of health personnel). **What determines the number of health personnel at local level? Should the population it caters to be a general predictor of the number of health personnel and vis-à-vis total budget allocation?**
+
+    -   **What other variables, other than population, should determine the budgetary allocation (or number of health personnel) at Local Level?** Or is it such that the local levels with lower per capita budgetary allocation are "healthy patches of population" that ought to require less investment from the state ?

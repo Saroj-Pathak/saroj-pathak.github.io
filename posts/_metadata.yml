@@ -1,0 +1,17 @@
+# posts/_metadata.yml
+bread-crumbs: true
+# This links your posts back to the Insights tab in your navbar
+# Adjust the number of ../ based on how deep your posts are
+parent: /index.qmd
+
+listing:
+  - id: read-next
+    contents: 
+      - "../../posts/**/*.qmd" 
+      - "../posts/**/*.qmd"
+      - "posts/**/*.qmd"
+    type: grid
+    max-items: 3
+    sort: "date desc"
+    fields: [title, date, image]
+categories: [Insights]

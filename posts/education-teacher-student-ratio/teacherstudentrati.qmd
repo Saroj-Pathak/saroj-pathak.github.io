@@ -1,0 +1,951 @@
+---
+title: "Financing Basic Education- From a lens of student-teacher ratio"
+format:
+  html:
+    toc: true
+    bread-crumbs: true
+    toc-location: right
+    toc-title: "In this Article"
+    page-layout: article
+    fontsize: 21px
+    mainfont: "Gill Sans"
+    css: /styles.css
+knitr:
+    opts_chunk: 
+      dev: "ragg_png"
+categories: [health, budget]
+title-block-banner: "#efeff8cc" 
+title-block-banner-color: "#002147" 
+image: "image/cover.png"
+---
+
+```{r}
+#| echo: false
+#| warning: false
+
+options(scipen=999)
+
+load("data/EduFinal.RData")
+
+# load("posts/education-teacher-student-ratio/data/EduFinal.RData")
+
+library(tidyverse)
+library(janitor)
+library(gt)
+library(sf)
+library(ggcirclepack)
+library(gt)
+library(echarts4r)
+library(treemapify)
+library(smplot2)
+library(gtsummary)
+library(ggthemes)
+library(forcats)
+library(ggtext)
+library(viridis)
+library(cowplot)
+
+school.80 |>
+    mutate(grade = str_squish(grade)) |>
+    filter(grade %in% c(
+        "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9", "G10", "G11", "G12"
+    )) |> 
+    mutate(level = case_when(
+        grade %in% c("G1", "G2", "G3", "G4", "G5") ~ "Basic (1-5)",
+        grade %in% c("G6", "G7", "G8") ~ "Basic (6-8)",
+        grade %in% c("G9", "G10") ~ "Secondary (9-10)",
+        grade %in% c("G11", "G12") ~ "Secondary (11-12)" 
+    )) |>
+    filter(Type == "Public") |> 
+    group_by(district_en, lg_en, lg_code, level) |> 
+    summarise(total_students = sum(value), .groups = "drop") |>
+    ungroup() |> 
+    left_join(
+        teacher.all |>
+            mutate(lg_code = as.character(lg_code)) |>
+            filter(type_school == "Community Schools") |>
+            filter(position != "Total Approved Positions") |> 
+            group_by(province, district_en, lg_en, lg_code, level) |> 
+            summarise(total_teachers = sum(value), .groups = "drop") |>
+            ungroup() |>
+            select(province, lg_code, level, total_teachers),
+        by = c("lg_code", "level")  
+    ) -> stuteacher.ratio
+
+stuteacher.ratio |>
+  filter(str_detect(level, "Basic")) |>
+  group_by(province, district_en, lg_en, lg_code) |> 
+  summarise(students = sum(total_students),
+            teachers = sum(total_teachers),
+            .groups = "drop") |> 
+  ungroup() |> 
+  mutate(ratio = students/teachers) -> basic.eduction.ratio
+
+
+
+```
+
+# Introduction
+
+This exercise is an attempt to analyse conditional grants as allocated by the Federal Government of Nepal for education at Local Level. Pursuant to the constitution of Nepal, the basic education falls within the power of the Local Level Governments.
+
+The legacy of pre-federal education system still holds a strong grip in the Education Sector in Nepal including those in the Local Level - which have constitutional power of Basic Education. This means, the federal government have had hands-on approach in matters of resource allocation for the publicly funded school at local level, via conditional grants. The conditional grants for education targeted at publicly funded schools at local level comprises a significant chunk of total government spending for any single program.
+
+While there exists significant and acute \[horizontal\] fiscal imbalance among local level governments to run and operate their constitutional mandate of basic education, which makes it only imperative for federal government to intervene and correct the imbalance. However, the *modus operandi* of federal government of Nepal in allocating resources to counter the pervasive fiscal imbalance in Education Sector in Local Level has not been within the spirit of constitutional mandate. In practice public education system is being run as a federal program; for example, in the Fiscal Year 2080-81, the federal budget had 18 different activity code amounting to 135 billion rupees for 753 Local Level Government under conditional grants for education. The level of micro-management in resource allocation of education sector is not only against the spirit of constitution and federalism, it also adds administrative cost to federal government.
+
+This exercise makes an attempt to analyse data on budget and school to understand budgetary allocation under conditional grant from federal government to local government which could be used to identify possible alternative methods to decentralize the process such that Local Level government are empowered to exercise their constitutional power of basic education.
+
+# Federal Education grant - a function of number of teachers
+
+A big portion of the conditional grant to local level government is comprised of salary of teachers. A total of **54.93%** of total budgetary allocation made to Local Level, as Conditional Grants, comprises of salary of expenses of teachers of Basic Level (from Grade 1 to 8) *(Activity 1.1.3.3)*. This suggests that grants (for activity 1.1.3.3) are directly correlated with total number of teachers at each local level. @fig-correlation-teacher-amount validates this relationship with Correlation Coefficient at 0.91 which suggests a strong correlation between the variables *ie* total number of teachers and budget allocated (for activity 1.1.3.3).
+
+```{r}
+#| echo: false
+#| warning: false
+#| label: fig-correlation-teacher-amount
+#| fig-cap: Jitter Plot and Karl Pearson’s Coefficient between total number of teachers and budget allocated
+#| fig-align: left
+
+
+budget |>
+  mutate(test = case_when(
+    str_detect(PROJECT_NDESC, "प्रदेश") ~ T,
+    .default = F
+    )) |>
+  filter(test == F) |>
+  filter(ACTIVITY_CODE == "1.1.3.3") |>
+  select(lg_code, lg_en, district_en, AMOUNT) |>
+    left_join(
+      basic.eduction.ratio |>
+        select(province, lg_code, students, teachers, ratio),
+      by = "lg_code") |>
+  as.data.frame() |> 
+  ggplot() +
+  aes(
+    x = teachers,
+    y = AMOUNT
+  ) +
+  aes(
+    size = students
+  )+
+  geom_point(aes(colour = province), alpha = 0.5)+
+  guides(size = "none")+ 
+  sm_statCorr(color = 'forestgreen', corr_method = 'pearson',
+              linetype = 'dashed') +
+  ggtitle(
+    "Jitter Plot with Karl Pearson Coefficient for relationship between <br> total Teacher and Budget Allocated "
+  ) +
+  labs(x = "Total Teachers",
+       y = "Total Budget (in 000s)",
+       caption = "The size of the point denotes the total number of students") +
+  theme(
+    plot.caption = element_text(
+      family = "Gill Sans",
+      size = 8,
+      hjust = -0.2,
+      margin = margin(
+        t = 0.5,
+        unit = "cm"
+      ),
+      face = "italic"
+    ),
+    plot.title = element_markdown(
+      family = "Gill Sans",
+      margin = margin(
+        t = 10,
+        b = 20
+      )
+    ),
+    legend.position = "right",
+    plot.background = element_rect(
+      fill = "#F3F0E3",
+      linewidth = 1,
+      colour = "black"
+    ),
+    plot.margin = margin(
+      b = 0.5,
+      r = 0.5,
+      l = 0.5,
+      unit = "cm"
+    ),
+    panel.background = element_rect(
+      fill = "#F3F0E3"
+    ),
+    legend.background = element_rect(
+      fill = "#F3F0E3"
+    )
+  )
+```
+
+An alternative method for allocating grants that comprises salary of teachers need to be devised. One of the parameters (among combination of other) for such alternative method could be student teacher ratio.
+
+# Student-teacher ratio - Could it be an alternative ?
+
+First lets compute student teacher ratio for Grades 1 to 8 (Basic Education).
+
+```{r}
+#| echo: false
+#| warning: false
+#| label: tbl-data-ratio
+#| tbl-cap: Descriptive statistical values for Student teacher ratio  
+
+
+
+basic.eduction.ratio |>
+  select(province, 7) |> 
+  tbl_summary(
+    by = province,
+    type = ratio ~ "continuous2",
+    statistic = list(
+      ratio ~ c("{mean}", "{sd}", "{min}", "{max}")
+    ),
+    digits = ratio ~ 2,
+    label = ratio ~ "Student Teacher Ratio"
+  ) |> 
+  bold_labels()
+  
+
+
+
+```
+
+**Lets examine the relationship of student-teacher ratio and budget allocated at each LG.**
+
+```{r}
+#| echo: false
+#| warning: false
+#| label: fig-correlation-teacherstudent-budget
+#| fig-align: left
+#| fig-cap: Jitter Plot and Karl Pearson’s Coefficient between student-teacher ratio and budget allocated
+
+
+budget |>
+  mutate(test = case_when(
+    str_detect(PROJECT_NDESC, "प्रदेश") ~ T,
+    .default = F
+    )) |>
+  filter(test == F) |>
+  filter(ACTIVITY_CODE == "1.1.3.3") |>
+  select(lg_code, lg_en, district_en, AMOUNT) |>
+    left_join(
+      basic.eduction.ratio |>
+        select(province, lg_code, students, teachers, ratio),
+      by = "lg_code") |>
+  as.data.frame() |> 
+  ggplot() +
+  aes(
+    x = ratio,
+    y = AMOUNT
+  ) +
+  aes(
+    size = students
+  )+
+  geom_point(aes(colour = province), alpha = 0.5)+
+  guides(size = "none")+ 
+  sm_statCorr(color = 'forestgreen', corr_method = 'pearson',
+              linetype = 'dashed') +
+  ggtitle(
+    "Jitter Plot with Karl Pearson Coefficient for relationship between <br> Student-Teacher ratio and Budget Allocated "
+  ) +
+  labs(x = "Student-Teacher ratio",
+       y = "Total Budget (in 000s)",
+       caption = "The size of the point denotes the total number of students") +
+  theme(
+    plot.caption = element_text(
+      family = "Gill Sans",
+      size = 8,
+      hjust = -0.2,
+      margin = margin(
+        t = 0.5,
+        unit = "cm"
+      ),
+      face = "italic"
+    ),
+    plot.title = element_markdown(
+      family = "Gill Sans",
+      margin = margin(
+        t = 10,
+        b = 20
+      )
+    ),
+    legend.position = "right",
+    plot.background = element_rect(
+      fill = "#F3F0E3",
+      linewidth = 1,
+      colour = "black"
+    ),
+    plot.margin = margin(
+      b = 0.5,
+      r = 0.5,
+      l = 0.5,
+      unit = "cm"
+    ),
+    panel.background = element_rect(
+      fill = "#F3F0E3"
+    ),
+    legend.background = element_rect(
+      fill = "#F3F0E3"
+    )
+  )
+```
+
+The @fig-correlation-teacherstudent-budget suggests a very weak and negative correlation between student-teacher ratio and total grants (for activity 1.1.3.3). The @fig-facet-correlation below should provide a more clearer view into the matter.
+
+```{r}
+#| echo: false
+#| warning: false
+#| fig-width: 10
+#| fig-height: 8
+#| label: fig-facet-correlation
+#| fig-cap: Jitter Plot and Karl Pearson’s Coefficient between student-teacher ratio and budget allocated for each Provinces
+
+budget |>
+  mutate(test = case_when(
+    str_detect(PROJECT_NDESC, "प्रदेश") ~ T,
+    .default = F
+    )) |>
+  filter(test == F) |>
+  filter(ACTIVITY_CODE == "1.1.3.3") |>
+  select(lg_code, lg_en, district_en, AMOUNT) |>
+    left_join(
+      basic.eduction.ratio |>
+        select(province, lg_code, students, teachers, ratio),
+      by = "lg_code") |>
+  as.data.frame() |> 
+  ggplot() +
+  aes(
+    x = ratio,
+    y = AMOUNT
+  ) +
+  aes(
+    size = students
+  )+
+  geom_point(aes(colour = province), alpha = 0.3)+
+  guides(size = "none")+ 
+  sm_statCorr(color = 'forestgreen', corr_method = 'pearson',
+              linetype = 'dashed') +
+  facet_wrap(~ province)+
+  ggtitle(
+    "Jitter Plot with Karl Pearson Coefficient for relationship between <br> Student-Teacher ratio and Budget Allocated for each Provinces "
+  ) +
+  labs(x = "Student-Teacher ratio",
+       y = "Total Budget (in 000s)",
+       caption = "The size of the point denotes the total number of students") +
+  theme(
+    plot.caption = element_text(
+      family = "Gill Sans",
+      size = 8,
+      hjust = 0,
+      margin = margin(
+        t = 0.5,
+        unit = "cm"
+      ),
+      face = "italic"
+    ),
+    plot.title = element_markdown(
+      family = "Gill Sans",
+      margin = margin(
+        t = 10,
+        b = 20
+      )
+    ),
+    legend.position = "none",
+    plot.background = element_rect(
+      fill = "#F3F0E3",
+      linewidth = 1,
+      colour = "black"
+    ),
+    plot.margin = margin(
+      b = 0.5,
+      r = 0.5,
+      l = 0.5,
+      unit = "cm"
+    ),
+    panel.background = element_rect(
+      fill = "#F3F0E3"
+    ),
+    legend.background = element_rect(
+      fill = "#F3F0E3"
+    )
+  )
+
+
+
+
+```
+
+The extreme variance of correlation among various Provinces is an indication of disproportionate student-teacher ratio and its relationship with total grants allocated. A closer and deeper analysis of Bagmati Province (maybe to deduce a minimal national standard) and Madhesh Province (to understand characteristics of what is wrong !) would be an interesting exercise.
+
+## Student - teacher ratio in heat map
+
+```{r}
+#| echo: false
+#| warning: false
+#| label: fig-heatmap-student-teacher-ratio
+#| fig-cap: Heatmap of student teacher ratio at Basic Level (Grade 1 to 8) at all Local Level
+#| fig-height: 8.2
+#| fig-width: 12
+
+
+library(tmaptools)
+
+sf_use_s2(FALSE)
+
+map |>
+  group_by(Province) |> 
+  summarise() |>
+  ungroup() -> map_province
+
+
+map |>
+  st_as_sf() |>
+  left_join(
+    basic.eduction.ratio |> 
+      select(-district_en, -lg_en),
+    by = "lg_code"
+  ) |>
+  ggplot() +
+  geom_sf(
+    aes(fill = ratio),
+    colour = "black",
+    linewidth = 0.1,
+    size = 0.25
+  ) +
+  geom_sf(
+    data = map_province,
+    fill = NA,
+    colour = "black",
+    linewidth = 0.5,
+    size = 0.5
+  )+
+  coord_sf(crs = 4326)+
+  
+  scale_fill_distiller("",
+                       type = "seq",
+                       palette ="Spectral",
+                       guide = "coloursteps",
+                       breaks = seq(0, 200, 20),
+                       direction = -1,
+                       na.value = "white") +
+  scale_color_identity() +
+  theme_void()+
+  ggtitle(label = "Student Teacher Ratio for the FY 2080-81",
+          subtitle = "For public schools from Grade 1 to 8") +
+    theme(
+      plot.title.position = "panel",
+      plot.title = element_text(
+        size = 24,
+        family = "Gill Sans",
+        hjust = 0.5
+      ),
+      plot.subtitle = element_text(
+        size = 12,
+        family = "Gill Sans",
+        hjust = 0.5
+      ),
+      legend.title = element_text(
+        size = 24,
+        family = "Gill Sans"
+      ),
+      legend.position = "bottom",
+      legend.justification.bottom = "right",
+      legend.direction = "horizontal",
+      legend.box.spacing = unit(0.1, "cm"),
+      legend.key.size = unit(3, "cm"),
+      legend.key.width = unit(2,"cm"),
+      legend.key.height = unit(1, "cm"),
+      legend.text = element_text(
+        size = 9),
+      panel.border = element_blank(),
+      plot.background = element_rect(
+        colour = "black",
+         fill = "#F3F0E3"
+      )
+      )
+
+
+```
+
+The heat map @fig-heatmap-student-teacher-ratio above, clearly illustrates disproportionately high student teacher ratio in Madhesh Province. Lets examine features of Madhesh Province in regard to student teacher ratio.
+
+# The curious case of Madhesh !
+
+```{r}
+#| echo: false
+#| warning: false
+#| label: fig-total-students-basic
+#| fig-cap: Total number of students at Basic Level in each district
+#| fig-height: 8.2
+#| fig-width: 12
+
+basic.eduction.ratio |>
+  group_by(province, district_en) |> 
+  summarise(total_students = sum(students),
+            total_teachers = sum(teachers),
+            .groups = "drop") |>
+  ungroup() |> 
+  ggplot(aes(
+    id = district_en,
+    area = total_students,
+    fill = province
+  ))+
+  geom_circlepack(color = "black", linewidth = 0.2) +
+  aes(area = total_students) + 
+  aes(fill = province) + 
+  aes(render = total_students > 45000,)+
+  geom_circlepack_text(aes(label = after_stat(
+    paste(id, "\n",
+    round(area/1000, 1), "K"))), lineheight = 0.9, color = "black",show.legend = F)+
+  theme_void() +
+  ggtitle(
+    label = "Total Number of Students at Basic Level (Grade 1 - 8) in each districts "
+  ) +
+  scale_fill_brewer(palette = "Set2")+
+  scale_color_identity() +
+  coord_equal() +
+  theme(
+    plot.title = element_text(
+      vjust = 0.5,
+      family = "Gill Sans",
+      size = 20
+    ),
+    plot.background = element_rect(
+      fill = "#F3F0E3"
+    ),
+    plot.margin = margin(
+      r = 4,
+      l = 4, 
+      unit = "cm"
+    )
+  )
+
+```
+
+Above @fig-total-students-basic makes it very clear that the districts in Madhesh provinces have highest highest number of students who go to public school for Basic Education. Lets attempt to look into the total number of teachers at each district to make an assessment.
+
+```{r}
+#| echo: false
+#| warning: false
+#| label: fig-total-teachers-basic
+#| fig-cap: Total Number of teachers at each districts
+#| fig-height: 8.2
+#| fig-width: 12
+
+
+basic.eduction.ratio |>
+  group_by(province, district_en) |> 
+  summarise(total_students = sum(students),
+            total_teachers = sum(teachers),
+            .groups = "drop") |>
+  ungroup() |> 
+  ggplot(aes(
+    id = district_en,
+    area = total_teachers,
+    fill = province
+  ))+
+  geom_circlepack(color = "black", linewidth = 0.2) +
+  aes(area = total_teachers) + 
+  aes(fill = province) + 
+  aes(render = total_teachers > 2000,)+
+  geom_circlepack_text(aes(label = after_stat(
+    paste(id, "\n",
+    round(area/1000, 1), "K"))), lineheight = 0.9, color = "black",show.legend = F)+
+  theme_void() +
+  ggtitle(
+    label = "Total Number of Teachers at Basic Level (Grade 1 - 8) in each districts "
+  ) +
+  scale_fill_brewer(palette = "Set2")+
+  scale_color_identity() +
+  coord_equal() +
+  theme(
+    plot.title = element_text(
+      vjust = 0.5,
+      family = "Gill Sans",
+      size = 20
+    ),
+    plot.background = element_rect(
+      fill = "#F3F0E3"
+    ),
+    plot.margin = margin(
+      r = 4,
+      l = 4, 
+      unit = "cm"
+    )
+  )
+
+
+
+
+```
+
+The @fig-total-teachers-basic clearly illustrates the fact that even though the districts in the Madhesh Province have highest concentration of students, the total number of teachers (independent of total number of students) in districts of Madhesh Province is not among the top districts with high amount of teachers.
+
+Maybe be total number of schools in districts will help explaining the higher student teacher ratio in Madhesh (and in doing so provide a general rationale for teacher allocation in Nepal)
+
+```{r}
+#| echo: false
+#| warning: false
+#| label: fig-total-schools
+#| fig-height: 8.2
+#| fig-width: 12
+#| fig-cap: Total Number of Public School in each District
+
+school.80 |> 
+  rename("Province" = "District") |>
+  filter(Type == "Public") |> 
+  select(Province, lg_en, district_en, Name) |> 
+  unique() |> 
+  as.data.frame() |> 
+  group_by(
+    Province, district_en
+  ) |> 
+  summarise(total = n(), .groups = "drop") -> total.school.district
+
+total.school.district |>
+  ggplot(aes(
+    id = district_en,
+    area = total,
+    fill = Province
+  ))+
+  geom_circlepack(color = "black", linewidth = 0.2) +
+  aes(area = total) + 
+  aes(fill = Province) + 
+  aes(render = total > 400,)+
+  geom_circlepack_text(aes(label = after_stat(
+    paste(id, "\n",
+    round(area, 1)))), lineheight = 0.9, color = "black",show.legend = F)+
+  theme_void() +
+  ggtitle(
+    label = "Total Number of Public Schools at Basic Level (Grade 1 - 8) in each districts "
+  ) +
+  scale_fill_brewer(palette = "Set2")+
+  scale_color_identity() +
+  coord_equal() +
+  theme(
+    plot.title = element_text(
+      vjust = 0.5,
+      family = "Gill Sans",
+      size = 20
+    ),
+    plot.background = element_rect(
+      fill = "#F3F0E3"
+    ),
+    plot.margin = margin(
+      r = 4,
+      l = 4, 
+      unit = "cm"
+    )
+  )
+
+
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| label: fig-total-school-province
+#| fig-cap: Total number of public school in each provinces
+
+
+
+total.school.district |> 
+  group_by(Province) |> 
+  summarise(total = sum(total)) |>
+  arrange(desc(total)) |> 
+  ggplot(aes(
+    x = fct_reorder(Province, total),
+    y = total,
+    label = total
+  )) +
+  geom_col(fill = "forestgreen") +
+  geom_text(hjust = 1, color = "white")+
+  coord_flip()+
+  ggtitle(
+    label = "Total number of public schools in each Provinces"
+  )+
+  labs(x = "", y ="")+
+  theme(
+    axis.line = element_line(
+      color = "black"
+    ),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.background = element_rect(
+      fill = "#F3F0E3"
+    ),
+    panel.background = element_rect(
+      fill = "#F3F0E3"
+    ),
+    plot.title = element_text(
+      family = "Gill Sans",
+      size = "15",
+      face = "bold",
+      vjust = 0.5,
+      hjust = 0.5,
+      margin = margin(0,0,25,0)
+    )
+    
+  )
+
+
+
+
+```
+
+```{r}
+#| echo: false
+#| warning: false
+
+# define number of classes
+
+no_classes <- 6
+
+# extract quantiles 
+
+basic.eduction.ratio |>
+  pull(ratio) |> 
+  quantile(probs = seq(0,1, length.out = no_classes +1)) |>
+  as.vector() -> quantiles
+
+
+labels <- imap_chr(
+  quantiles, function(., idx){
+    return(
+    paste0(
+    round(
+      quantiles[idx], 2
+      ),
+    " - ",
+    round(
+      quantiles[idx +1 ], 2
+      )
+    ))
+  }) 
+
+
+
+labels <- labels[1:length(labels) - 1]
+
+basic.eduction.ratio |> 
+  mutate(mean_quantiles = cut(ratio,
+                              breaks = quantiles,
+                              labels = labels,
+                              include.lowest = T)) -> basic.eduction.ratio
+
+
+
+map |> 
+  st_as_sf() |> 
+  left_join(
+    basic.eduction.ratio |> 
+      select(lg_code, ratio, mean_quantiles),
+    by = "lg_code"
+  ) |> 
+  ggplot() +
+  geom_sf(
+    mapping = aes(
+      fill = mean_quantiles
+    ),
+    color = "white",
+    size = 0.1
+  ) +
+  scale_fill_viridis(
+    option = "magma",
+    name = "Student \nTeacher ratio",
+    alpha = 0.8,
+    begin = 0.1,
+    discrete = T,
+    direction = 1,
+    guide = guide_legend(
+      keyheight = unit(5, units = "mm"),
+      title.position = "top"
+    )
+  ) +
+  labs(x = NULL,
+       y = NULL,
+       title = "Nepal's Student Teacher ratio") +
+  theme_void()
+
+quantiles_ratio <- basic.eduction.ratio |> 
+  pull(ratio) |> 
+  quantile(probs = seq(0,1, length.out = 4))
+
+quantiles_budget <- budget |>
+  mutate(test = case_when(
+    str_detect(PROJECT_NDESC, "प्रदेश") ~ T,
+    .default = F
+    )) |>
+  filter(test == F) |>
+  filter(ACTIVITY_CODE == "1.1.3.3") |>
+  mutate(AMOUNT = AMOUNT/1000) |> 
+  pull(AMOUNT) |> 
+  quantile(probs = seq(0,1, length.out = 4))
+ 
+
+bivariate_color_scale <- tibble(
+  "3 - 3" = "#3F2949", # high ratio, high budget
+  "2 - 3" = "#435786",
+  "1 - 3" = "#4885C1", # low ratio, high budget
+  "3 - 2" = "#77324C",
+  "2 - 2" = "#806A8A", # medium ratio, medium budget
+  "1 - 2" = "#89A1C8",
+  "3 - 1" = "#AE3A4E", # high ratio, low budget
+  "2 - 1" = "#BC7C8F",
+  "1 - 1" = "#CABED0" # low ratio, low budget
+) |> 
+  gather("group", "fill")
+
+
+
+
+map |> 
+  #st_as_sf() |> 
+  left_join(
+    basic.eduction.ratio |> 
+      select(lg_code, ratio) |> 
+      mutate(
+        ratio_quantiles = cut(
+          ratio, 
+          breaks = quantiles_ratio,
+          include.lowest = T
+        )
+      ),
+    by = "lg_code"
+  ) |>
+  left_join(
+    budget |>
+      mutate(test = case_when(
+        str_detect(PROJECT_NDESC, "प्रदेश") ~ T,
+        .default = F)) |>
+      filter(test == F) |>
+      filter(ACTIVITY_CODE == "1.1.3.3") |>
+      select(lg_code, AMOUNT) |> 
+      mutate(
+        budget_quantiles = cut(
+          AMOUNT/1000,
+          breaks = quantiles_budget,
+          include.lowest = T)),
+  by = "lg_code") |>
+  mutate(
+    group = paste(
+      as.numeric(ratio_quantiles), "-",
+      as.numeric(budget_quantiles)
+    )
+  ) |>
+  left_join(bivariate_color_scale, by = "group") |>
+  ggplot()+
+  geom_sf(
+    aes(
+      fill = fill
+    ),
+    color = "white",
+    size = 0.1
+  ) +
+  theme_void()+
+  scale_fill_identity() + theme(text = element_text(family = "sans")) -> map_bivariate
+
+
+legend <- ggplot()+
+geom_tile(
+    data = bivariate_color_scale |> 
+      separate(group, into = c("ratio", "budget"), sep = " - ") |> 
+      mutate(ratio = as.integer(ratio), 
+             budget = as.integer(budget)),
+    mapping = aes(
+      x = ratio,
+      y = budget,
+      fill = fill
+    ) 
+  ) +
+  scale_fill_identity() +
+  theme_minimal() +
+  labs(x = "Higher student-teacher ratio",
+       y = "Higher Budget"  ) +
+  theme(
+    axis.text = element_blank(),
+    axis.title = element_text(size = 10, face = "bold"),
+    text = element_text(family = "sans")
+  ) +
+  coord_fixed()
+
+
+ggdraw() +
+  draw_plot(map_bivariate, 0,0,1,1) +
+  draw_plot(legend, 0.05, 0.075, 0.2, 0.2)+
+  theme_void()
+
+```
+
+```{r}
+#| echo: false
+#| warning: false
+
+budget |>
+  mutate(test = case_when(
+    str_detect(PROJECT_NDESC, "प्रदेश") ~ T,
+    .default = F
+    )) |>
+  filter(test == F) |>
+  filter(ACTIVITY_CODE == "1.1.3.3") |>
+  select(lg_code, lg_en, district_en, AMOUNT) |>
+    left_join(
+      basic.eduction.ratio |>
+        select(province, lg_code, students, teachers, ratio),
+      by = "lg_code") |>
+  mutate(st.ratio = round(students/teachers,2)) |>
+  mutate(ratio.bdte = round(AMOUNT/students,2)) |> 
+  as.data.frame() |> 
+  ggplot() +
+  aes(
+    x = ratio,
+    y = ratio.bdte
+  ) +
+  aes(
+    size = students
+  )+
+  geom_point(aes(colour = province), alpha = 0.3)+
+  guides(size = "none")+ 
+  sm_statCorr(color = 'forestgreen', corr_method = 'pearson',
+              linetype = 'dashed') +
+  facet_wrap(~ province) +
+  ggtitle(
+    "Jitter Plot with Karl Pearson Coefficient for relationship between <br> Student-Teacher ratio and Budget Allocated for each Provinces "
+  ) +
+  labs(x = "Student-Teacher ratio",
+       y = "Budget (in 000s) per students",
+       caption = "The size of the point denotes the total number of students") +
+  theme(
+    plot.caption = element_text(
+      family = "Gill Sans",
+      size = 8,
+      hjust = 0,
+      margin = margin(
+        t = 0.5,
+        unit = "cm"
+      ),
+      face = "italic"
+    ),
+    plot.title = element_markdown(
+      family = "Gill Sans",
+      margin = margin(
+        t = 10,
+        b = 20
+      )
+    ),
+    legend.position = "none",
+    plot.background = element_rect(
+      fill = "#F3F0E3",
+      linewidth = 1,
+      colour = "black"
+    ),
+    panel.background = element_rect(
+      fill = "#F3F0E3"
+    ),
+    legend.background = element_rect(
+      fill = "#F3F0E3"
+    )
+  )
+
+```
+
+

@@ -1,117 +1,87 @@
 ---
-title: "Saroj Pathak"
-format:
-  html:
-    css: styles.css
-    toc: false
-    page-layout: full
-    include-in-header:
-      text: |
-        <meta name="description" content="Data-driven analysis of Nepal's public finance, governance, and political economy — with a focus on subnational fiscal systems and intergovernmental transfers.">
-# listing:
-#   - id: recent-research
-#     contents: research
-#     sort: "date desc"
-#     max-items: 3
-#     type: default
-#     template: _templates/research-card.ejs
+title: ""
+listing:
+  - id: posts-home
+    contents: "posts/**/*.qmd"
+    type: grid
+    max-items: 4
+    sort: "date desc"
+    fields: [image, title, description, date]
 ---
 
-```{=html}
-<!-- ============ NAVBAR ============ -->
-<nav class="sp-nav">
-  <a href="/" class="sp-nav-name">Home</a>
-  <ul class="sp-nav-links">
-    <li><a href="/research.html">Research</a></li>
-    <li><a href="/tools.html">Tools</a></li>
-    <li><a href="/about.html">About</a></li>
-    <li><a href="/contact.html">Contact</a></li>
-  </ul>
-</nav>
+::: {.sp-hero}
+::: {.sp-hero-left}
+[Public Finance & Policy Analytics · Nepal]{.sp-hero-eyebrow}
 
-<!-- ============ HERO ============ -->
-<section class="sp-hero">
-  <span class="sp-hero-label">Public Finance &amp; Policy Analytics · Nepal</span>
-  <h1 class="sp-hero-name">Saroj Pathak</h1>
-  <p class="sp-hero-descriptor">
-    I analyse Nepal's fiscal and governance data to support better 
-    public decisions — turning <em>administrative records governments 
-    produce but rarely interrogate</em> into evidence that decision-makers 
-    can act on.
-  </p>
-  <a href="/research.html" class="sp-hero-cta">
-    View research &nbsp;→
-  </a>
-</section>
+# Nepal's federal money. Does it go where it's needed? {.sp-hero-headline}
 
-<!-- ============ DIVIDER ============ -->
-<div class="sp-rule"><hr></div>
+I analyse Nepal's fiscal and governance data to support better public decisions — turning *administrative records governments produce but rarely interrogate* into evidence that decision-makers can act on.
 
-<!-- ============ RECENT RESEARCH ============ -->
-<section class="sp-research">
-  <div class="sp-section-header">
-    <h2 class="sp-section-title">Recent Research</h2>
-    <a href="/research.html" class="sp-view-all">All briefs →</a>
-  </div>
+[Saroj Pathak · Kathmandu]{.sp-hero-byline}
 
-  <div class="sp-cards">
-```
-
-::: {#recent-research}
+[[View blogs →]{.sp-btn-primary}](/blogs.html)  [[Interactive tools]{.sp-btn-secondary}](/tools.html)
 :::
 
-```{=html}
-  </div>
-</section>
+::: {.sp-hero-right}
+::: {.sp-stat-card}
+[4.7×]{.sp-stat-number}
 
-<!-- ============ DIVIDER ============ -->
-<div class="sp-rule"><hr></div>
+gap between highest and lowest per-capita grant allocation across Nepal's 753 local governments
 
-<!-- ============ FOCUS AREAS ============ -->
-<section class="sp-focus">
-  <span class="sp-section-label">What I work on</span>
-  <div class="sp-focus-grid">
+[FY 2083–84 · FCGO allocation data]{.sp-stat-source}
+:::
 
-    <div class="sp-focus-item">
-      <span class="sp-focus-item-label">01</span>
-      <div class="sp-focus-item-title">Public Finance &amp; Fiscal Transfers</div>
-      <p class="sp-focus-item-desc">
-        Analysis of intergovernmental conditional grants, subnational 
-        budget allocation, and equity in federal resource distribution 
-        across Nepal's 753 local governments.
-      </p>
-    </div>
+::: {.sp-stat-card}
+[r ≈ 0]{.sp-stat-number}
 
-    <div class="sp-focus-item">
-      <span class="sp-focus-item-label">02</span>
-      <div class="sp-focus-item-title">Governance &amp; Decentralisation</div>
-      <p class="sp-focus-item-desc">
-        How federal policy intent translates — or fails to translate — 
-        into subnational outcomes. Focus on Nepal's post-2015 federal 
-        transition and its implementation gaps.
-      </p>
-    </div>
+correlation between education conditional grant and student-teacher ratio — the formula ignores actual need
 
-    <div class="sp-focus-item">
-      <span class="sp-focus-item-label">03</span>
-      <div class="sp-focus-item-title">Electoral &amp; Political Analytics</div>
-      <p class="sp-focus-item-desc">
-        Constituency-level diagnostic analysis of voter behaviour, 
-        party fragmentation, and electoral volatility to support 
-        evidence-based campaign strategy.
-      </p>
-    </div>
+[Ministry of Education · CBS 2021]{.sp-stat-source}
+:::
 
-  </div>
-</section>
+::: {.sp-stat-card}
+[98×]{.sp-stat-number}
 
-<!-- ============ FOOTER ============ -->
-<footer class="sp-footer">
-  <span class="sp-footer-name">Saroj Pathak · Kathmandu, Nepal</span>
-  <ul class="sp-footer-links">
-    <li><a href="mailto:your@email.com">Email</a></li>
-    <li><a href="https://github.com/yourusername" target="_blank">GitHub</a></li>
-    <li><a href="https://linkedin.com/in/yourprofile" target="_blank">LinkedIn</a></li>
-  </ul>
-</footer>
-```
+the government's green tax projection versus first-year actual collections — a forensic budget finding
+
+[FCGO · Budget Speech 2083–84]{.sp-stat-source}
+:::
+:::
+:::
+
+---
+
+::: {.sp-section-header}
+## Recent Blogpost
+
+[All posts →](/blogs.html){.sp-view-all}
+:::
+
+::: {#posts-home}
+:::
+
+---
+
+::: {.sp-focus}
+[What I work on]{.sp-section-label}
+
+::: {.sp-focus-grid}
+::: {.sp-focus-item}
+#### Public Finance & Fiscal Systems
+
+Quantitative analysis of intergovernmental fiscal transfers, budget credibility, and subnational public finance using administrative and fiscal data to understand whether fiscal systems allocate resources equitably and achieve their stated policy objectives.
+:::
+
+::: {.sp-focus-item}
+#### Human Development Analytics
+
+Analysis of health financing, education outcomes and household welfare using survey microdata, administrative records, fiscal data to examine whether public services reach populations with greatest need.
+:::
+
+::: {.sp-focus-item}
+#### Political Economy & Electoral Analytics
+
+Constituency-level analysis of voter behaviour, political competitions, and policy incentives using electoral and demographic data to understand how politics shapes decision-making.
+:::
+:::
+:::

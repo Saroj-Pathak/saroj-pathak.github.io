@@ -1,0 +1,28 @@
+---
+title: "Insights"
+toc: false
+format:
+  html:
+    css: styles.css
+    toc: false
+    # bread-crumb: true
+    # include-before-body: _partials/nav.html
+listing:
+  - id: main-listing
+    contents: "../posts/**/*.qmd"
+    type: default
+    sort: "date desc"
+    filter-ui: true
+    categories: true
+    page-size: 9
+    image-height: "250px"
+    fields: [image, date, title, description, categories, reading-time]
+---
+
+:::: {.grid}
+::: {.g-col-12}
+## Latest Posts
+::: {#main-listing}
+:::
+:::
+::::
