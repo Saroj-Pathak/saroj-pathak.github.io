@@ -7,15 +7,21 @@
     ]
   },
   {
-    "listing": "/posts/public-health/post1.html",
+    "listing": "/tools.html",
     "items": [
-      "/posts/education-teacher-student-ratio/teacherstudentrati.html"
+      "/tools/education-simulator/edu-simulator.html"
     ]
   },
   {
     "listing": "/posts/education-teacher-student-ratio/teacherstudentrati.html",
     "items": [
       "/posts/public-health/post1.html"
+    ]
+  },
+  {
+    "listing": "/posts/public-health/post1.html",
+    "items": [
+      "/posts/education-teacher-student-ratio/teacherstudentrati.html"
     ]
   },
   {

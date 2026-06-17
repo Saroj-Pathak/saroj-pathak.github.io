@@ -21,6 +21,41 @@
     "text": "The work and the approach\n  \n\n   \n\n  What I do\n  \n     I work at the intersection of public data and policy decisions — taking \n        administrative and fiscal records that governments produce but rarely \n        interrogate, and turning them into evidence that decision-makers can \n        act on.\n    \n      My focus is Nepal's intergovernmental fiscal system: how federal \n      resources flow to provincial and local governments, whether that flow \n      reflects stated policy priorities, and where the gaps between allocation \n      logic and actual outcomes are widest. I work across health, education, \n      agricultural policy, and electoral analytics — not because these are \n      separate interests, but because the same fiscal architecture shapes all \n      of them.\n    \n    \n      The clients and organisations I work with need more than charts — they \n      need a clear answer to a hard question. My work is oriented toward that \n      answer, not toward the data itself.\n    \n  \n\n  How I work\n  \n     \n      All analysis is produced in R and published as reproducible Quarto \n      documents. I work directly from primary sources — Ministry of Finance \n      budget data, MoFAGA conditional grant records, Election Commission \n      results, and household survey microdata — rather than aggregated \n      secondary sources.\n      \n    \n      I am especially interested in subnational variation: the patterns that \n      disappear when data is aggregated to the national level. Nepal's \n      federal system creates 753 units of observation. Most analysis uses \n      seven provinces. The most important findings tend to live in the \n      difference between those two scales.\n    \n  \n\n  Background\n  \n    \n      I am based in Kathmandu. My work on Nepal's fiscal decentralisation \n      has covered health workforce financing, basic education conditional \n      grants, out-of-pocket health expenditure, and electoral constituency \n      analysis. Earlier work includes trade policy — specifically \n      Nepal's sugarcane sector and import duty structures.\n    \n    \n      I am available for consulting engagements, research collaborations, \n      and analytical commissions. If your organisation needs someone who \n      can move between government budget documents and actionable \n      policy recommendations — and produce the analysis in between — \n      I would be glad to talk."
   },
   {
+    "objectID": "tools.html",
+    "href": "tools.html",
+    "title": "Tools",
+    "section": "",
+    "text": "Interactive tool for exploring how Nepal’s education conditional grant formula allocates funds across local governments.\n\n\n\n\n\nNo matching items"
+  },
+  {
+    "objectID": "tools.html#tools",
+    "href": "tools.html#tools",
+    "title": "Tools",
+    "section": "",
+    "text": "Interactive tool for exploring how Nepal’s education conditional grant formula allocates funds across local governments.\n\n\n\n\n\nNo matching items"
+  },
+  {
+    "objectID": "posts/education-teacher-student-ratio/teacherstudentrati.html",
+    "href": "posts/education-teacher-student-ratio/teacherstudentrati.html",
+    "title": "Financing Basic Education- From a lens of student-teacher ratio",
+    "section": "",
+    "text": "This exercise is an attempt to analyse conditional grants as allocated by the Federal Government of Nepal for education at Local Level. Pursuant to the constitution of Nepal, the basic education falls within the power of the Local Level Governments.\nThe legacy of pre-federal education system still holds a strong grip in the Education Sector in Nepal including those in the Local Level - which have constitutional power of Basic Education. This means, the federal government have had hands-on approach in matters of resource allocation for the publicly funded school at local level, via conditional grants. The conditional grants for education targeted at publicly funded schools at local level comprises a significant chunk of total government spending for any single program.\nWhile there exists significant and acute [horizontal] fiscal imbalance among local level governments to run and operate their constitutional mandate of basic education, which makes it only imperative for federal government to intervene and correct the imbalance. However, the modus operandi of federal government of Nepal in allocating resources to counter the pervasive fiscal imbalance in Education Sector in Local Level has not been within the spirit of constitutional mandate. In practice public education system is being run as a federal program; for example, in the Fiscal Year 2080-81, the federal budget had 18 different activity code amounting to 135 billion rupees for 753 Local Level Government under conditional grants for education. The level of micro-management in resource allocation of education sector is not only against the spirit of constitution and federalism, it also adds administrative cost to federal government.\nThis exercise makes an attempt to analyse data on budget and school to understand budgetary allocation under conditional grant from federal government to local government which could be used to identify possible alternative methods to decentralize the process such that Local Level government are empowered to exercise their constitutional power of basic education."
+  },
+  {
+    "objectID": "posts/education-teacher-student-ratio/teacherstudentrati.html#student---teacher-ratio-in-heat-map",
+    "href": "posts/education-teacher-student-ratio/teacherstudentrati.html#student---teacher-ratio-in-heat-map",
+    "title": "Financing Basic Education- From a lens of student-teacher ratio",
+    "section": "Student - teacher ratio in heat map",
+    "text": "Student - teacher ratio in heat map\n\n\n\n\n\n\n\n\nFigure 4: Heatmap of student teacher ratio at Basic Level (Grade 1 to 8) at all Local Level\n\n\n\n\n\nThe heat map Figure 4 above, clearly illustrates disproportionately high student teacher ratio in Madhesh Province. Lets examine features of Madhesh Province in regard to student teacher ratio."
+  },
+  {
+    "objectID": "contact.html",
+    "href": "contact.html",
+    "title": "Contact",
+    "section": "",
+    "text": "Saroj Pathak\n  \n    Research\n    Tools\n    About\n    Contact\n  \n\n\n\n\n\n  \n    Contact\n    Get in touch\n  \n\n  \n\n    \n      For consulting enquiries, research collaboration, or to discuss \n      a specific question about Nepal's public finance and governance \n      data — reach me directly by email.\n    \n\n    \n      your@email.com\n    \n\n    \n      Elsewhere\n      \n        \n          GitHub\n          Code and analysis repositories\n        \n        \n          LinkedIn\n          Professional background\n        \n        \n          RPubs\n          Earlier and exploratory work\n        \n      \n    \n\n  \n\n  \n\n\n\n\n\n  Saroj Pathak · Kathmandu, Nepal\n  \n    Email\n    GitHub\n    LinkedIn"
+  },
+  {
     "objectID": "posts/public-health/post1.html",
     "href": "posts/public-health/post1.html",
     "title": "Demystifying Conditional Grants for Salaries and allowances of health personel at local level",
@@ -89,27 +124,6 @@
     "title": "Demystifying Conditional Grants for Salaries and allowances of health personel at local level",
     "section": "Footnotes",
     "text": "Footnotes\n\n\nआर्थिक वर्ष २०८०-८१ मा स्थानिय तहहरुबाट सञ्चालन गरिने स्वास्थ्य तर्फका सशर्त अनुदन अन्तर्गतका कृयाकलापहरु सञ्चालन सम्बन्धी मार्गनिर्देशन, MoFAGA available at https://www.mofaga.gov.np/detail/2997↩︎\nHere the outlier is calculated using the interquartile range (IQR) criterion↩︎"
-  },
-  {
-    "objectID": "contact.html",
-    "href": "contact.html",
-    "title": "Contact",
-    "section": "",
-    "text": "Saroj Pathak\n  \n    Research\n    Tools\n    About\n    Contact\n  \n\n\n\n\n\n  \n    Contact\n    Get in touch\n  \n\n  \n\n    \n      For consulting enquiries, research collaboration, or to discuss \n      a specific question about Nepal's public finance and governance \n      data — reach me directly by email.\n    \n\n    \n      your@email.com\n    \n\n    \n      Elsewhere\n      \n        \n          GitHub\n          Code and analysis repositories\n        \n        \n          LinkedIn\n          Professional background\n        \n        \n          RPubs\n          Earlier and exploratory work\n        \n      \n    \n\n  \n\n  \n\n\n\n\n\n  Saroj Pathak · Kathmandu, Nepal\n  \n    Email\n    GitHub\n    LinkedIn"
-  },
-  {
-    "objectID": "posts/education-teacher-student-ratio/teacherstudentrati.html",
-    "href": "posts/education-teacher-student-ratio/teacherstudentrati.html",
-    "title": "Financing Basic Education- From a lens of student-teacher ratio",
-    "section": "",
-    "text": "This exercise is an attempt to analyse conditional grants as allocated by the Federal Government of Nepal for education at Local Level. Pursuant to the constitution of Nepal, the basic education falls within the power of the Local Level Governments.\nThe legacy of pre-federal education system still holds a strong grip in the Education Sector in Nepal including those in the Local Level - which have constitutional power of Basic Education. This means, the federal government have had hands-on approach in matters of resource allocation for the publicly funded school at local level, via conditional grants. The conditional grants for education targeted at publicly funded schools at local level comprises a significant chunk of total government spending for any single program.\nWhile there exists significant and acute [horizontal] fiscal imbalance among local level governments to run and operate their constitutional mandate of basic education, which makes it only imperative for federal government to intervene and correct the imbalance. However, the modus operandi of federal government of Nepal in allocating resources to counter the pervasive fiscal imbalance in Education Sector in Local Level has not been within the spirit of constitutional mandate. In practice public education system is being run as a federal program; for example, in the Fiscal Year 2080-81, the federal budget had 18 different activity code amounting to 135 billion rupees for 753 Local Level Government under conditional grants for education. The level of micro-management in resource allocation of education sector is not only against the spirit of constitution and federalism, it also adds administrative cost to federal government.\nThis exercise makes an attempt to analyse data on budget and school to understand budgetary allocation under conditional grant from federal government to local government which could be used to identify possible alternative methods to decentralize the process such that Local Level government are empowered to exercise their constitutional power of basic education."
-  },
-  {
-    "objectID": "posts/education-teacher-student-ratio/teacherstudentrati.html#student---teacher-ratio-in-heat-map",
-    "href": "posts/education-teacher-student-ratio/teacherstudentrati.html#student---teacher-ratio-in-heat-map",
-    "title": "Financing Basic Education- From a lens of student-teacher ratio",
-    "section": "Student - teacher ratio in heat map",
-    "text": "Student - teacher ratio in heat map\n\n\n\n\n\n\n\n\nFigure 4: Heatmap of student teacher ratio at Basic Level (Grade 1 to 8) at all Local Level\n\n\n\n\n\nThe heat map Figure 4 above, clearly illustrates disproportionately high student teacher ratio in Madhesh Province. Lets examine features of Madhesh Province in regard to student teacher ratio."
   },
   {
     "objectID": "index.html",
