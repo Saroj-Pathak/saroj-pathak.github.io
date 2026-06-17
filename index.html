@@ -73,20 +73,20 @@ ul.task-list li input[type="checkbox"] {
 <script>
 
   window.document.addEventListener("DOMContentLoaded", function (_event) {
-    const listingTargetEl = window.document.querySelector('#listing-recent-research .list');
+    const listingTargetEl = window.document.querySelector('#listing-posts-home .list');
     if (!listingTargetEl) {
       // No listing discovered, do not attach.
       return; 
     }
 
     const options = {
-      valueNames: ['listing-title','listing-date','listing-description',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-file-modified-sort'] }],
+      valueNames: ['listing-image','listing-title','listing-description','listing-date',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-file-modified-sort'] }],
       
-      searchColumns: [],
+      searchColumns: ["listing-title","listing-author","listing-image","listing-description"],
     };
 
     window['quarto-listings'] = window['quarto-listings'] || {};
-    window['quarto-listings']['listing-recent-research'] = new List('listing-recent-research', options);
+    window['quarto-listings']['listing-posts-home'] = new List('listing-posts-home', options);
 
     if (window['quarto-listing-loaded']) {
       window['quarto-listing-loaded']();
@@ -99,7 +99,15 @@ ul.task-list li input[type="checkbox"] {
     }
   })
   </script>
-<meta name="description" content="Data-driven analysis of Nepal's public finance, governance, and political economy.">
+</head><body class="quarto-light"><nav class="sp-nav">
+    <a href="./" class="sp-nav-logo">Home</a>
+    <ul class="sp-nav-links">
+      <li><a href="./blogs.html">Blogs</a></li>
+      <li><a href="./tools.html">Tools</a></li>
+      <li><a href="./about.html">About</a></li>
+      <li><a href="./contact.html">Contact</a></li>
+    </ul>
+  </nav>
 
   <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
@@ -132,9 +140,9 @@ window.Quarto = {
 </script>
 
 <link rel="stylesheet" href="styles.css">
-</head>
 
-<body class="quarto-light">
+
+
 
 <div id="quarto-search-results"></div>
 <!-- content -->
@@ -144,15 +152,6 @@ window.Quarto = {
     
 <!-- main -->
 <main class="content column-page" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block"></header>
-<nav class="sp-nav">
-    <a href="./" class="sp-nav-logo">Home</a>
-    <ul class="sp-nav-links">
-      <li><a href="./blogs.html">Blogs</a></li>
-      <li><a href="./tools.html">Tools</a></li>
-      <li><a href="./about.html">About</a></li>
-      <li><a href="./contact.html">Contact</a></li>
-    </ul>
-  </nav>
 
 
 
@@ -164,7 +163,7 @@ window.Quarto = {
 <h1 class="sp-hero-headline">Nepal’s federal money. Does it go where it’s needed?</h1>
 <p>I analyse Nepal’s fiscal and governance data to support better public decisions — turning <em>administrative records governments produce but rarely interrogate</em> into evidence that decision-makers can act on.</p>
 <p><span class="sp-hero-byline">Saroj Pathak · Kathmandu</span></p>
-<p><a href="./research.html"><span class="sp-btn-primary">View blogs →</span></a> <a href="./tools.html"><span class="sp-btn-secondary">Interactive tools</span></a></p>
+<p><a href="./blogs.html"><span class="sp-btn-primary">View blogs →</span></a> <a href="./tools.html"><span class="sp-btn-secondary">Interactive tools</span></a></p>
 </section>
 </div>
 <div class="sp-hero-right">
@@ -186,13 +185,44 @@ window.Quarto = {
 </div>
 </div>
 <hr>
-<section id="recent-research" class="level2 sp-section-header">
-<h2 class="anchored" data-anchor-id="recent-research">Recent research</h2>
-<p><a href="./research.html" class="sp-view-all">All briefs →</a></p>
+<section id="recent-blogpost" class="level2 sp-section-header">
+<h2 class="anchored" data-anchor-id="recent-blogpost">Recent Blogpost</h2>
+<p><a href="./blogs.html" class="sp-view-all">All posts →</a></p>
 </section>
-<div id="listing-recent-research" class="quarto-listing quarto-listing-container-grid">
+<div id="listing-posts-home" class="quarto-listing quarto-listing-container-grid">
 <div class="list grid quarto-listing-cols-3">
-
+<div class="g-col-1" data-index="0" data-categories="SW5zaWdodHMlMkNoZWFsdGglMkNidWRnZXQ=" data-listing-file-modified-sort="1781673701139" data-listing-reading-time-sort="29" data-listing-word-count-sort="5619">
+<a href="./posts/education-teacher-student-ratio/teacherstudentrati.html" class="quarto-grid-link">
+<div class="quarto-grid-item card h-100 card-left">
+<p class="card-img-top">
+<img loading="lazy" src="./posts/education-teacher-student-ratio/image/cover.png" class="thumbnail-image card-img" style="height: 150px;">
+</p>
+<div class="card-body post-contents">
+<h5 class="no-anchor card-title listing-title">
+Financing Basic Education- From a lens of student-teacher ratio
+</h5>
+<div class="card-text listing-description delink">
+This exercise is an attempt to analyse conditional grants as allocated by the Federal Government of Nepal for education at Local Level. Pursuant to the constitution of…
+</div>
+</div>
+</div></a>
+</div>
+<div class="g-col-1" data-index="1" data-categories="SW5zaWdodHMlMkNoZWFsdGglMkNidWRnZXQ=" data-listing-file-modified-sort="1781687182153" data-listing-reading-time-sort="34" data-listing-word-count-sort="6754">
+<a href="./posts/public-health/post1.html" class="quarto-grid-link">
+<div class="quarto-grid-item card h-100 card-left">
+<p class="card-img-top">
+<img loading="lazy" src="./posts/public-health/post1_files/figure-html/fig-map-budget-primary-health-1.png" class="thumbnail-image card-img" style="height: 150px;">
+</p>
+<div class="card-body post-contents">
+<h5 class="no-anchor card-title listing-title">
+Demystifying Conditional Grants for Salaries and allowances of health personel at local level
+</h5>
+<div class="card-text listing-description delink">
+Ministry of Health and Population is one of the biggest spender of federal Budget in Nepal. A significant portion of its budget constitutes conditional grants to 753 local…
+</div>
+</div>
+</div></a>
+</div>
 </div>
 <div class="listing-no-matching d-none">No matching items</div>
 </div>
@@ -306,7 +336,7 @@ window.Quarto = {
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/Saroj-Pathak\.github\.io\/website-saroj\/");
+        var filterRegex = new RegExp("https:\/\/Saroj-Pathak\.github\.io\/saroj-pathak\.github\.io\/");
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

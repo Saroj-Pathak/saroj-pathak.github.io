@@ -1,19 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://Saroj-Pathak.github.io/website-saroj/stub.html</loc>
-    <lastmod>2026-06-15T12:52:10.542Z</lastmod>
+    <loc>https://Saroj-Pathak.github.io/saroj-pathak.github.io/blogs.html</loc>
+    <lastmod>2026-06-17T09:08:56.431Z</lastmod>
   </url>
   <url>
-    <loc>https://Saroj-Pathak.github.io/website-saroj/index.html</loc>
-    <lastmod>2026-06-17T04:45:07.911Z</lastmod>
+    <loc>https://Saroj-Pathak.github.io/saroj-pathak.github.io/about.html</loc>
+    <lastmod>2026-06-17T05:03:24.816Z</lastmod>
   </url>
   <url>
-    <loc>https://Saroj-Pathak.github.io/website-saroj/contact.html</loc>
+    <loc>https://Saroj-Pathak.github.io/saroj-pathak.github.io/posts/public-health/post1.html</loc>
+    <lastmod>2026-06-17T09:06:22.153Z</lastmod>
+  </url>
+  <url>
+    <loc>https://Saroj-Pathak.github.io/saroj-pathak.github.io/contact.html</loc>
     <lastmod>2026-06-15T12:52:10.536Z</lastmod>
   </url>
   <url>
-    <loc>https://Saroj-Pathak.github.io/website-saroj/about.html</loc>
-    <lastmod>2026-06-17T04:48:03.216Z</lastmod>
+    <loc>https://Saroj-Pathak.github.io/saroj-pathak.github.io/posts/education-teacher-student-ratio/teacherstudentrati.html</loc>
+    <lastmod>2026-06-17T05:21:41.139Z</lastmod>
+  </url>
+  <url>
+    <loc>https://Saroj-Pathak.github.io/saroj-pathak.github.io/index.html</loc>
+    <lastmod>2026-06-17T09:07:17.387Z</lastmod>
+  </url>
+  <url>
+    <loc>https://Saroj-Pathak.github.io/saroj-pathak.github.io/stub.html</loc>
+    <lastmod>2026-06-15T12:52:10.542Z</lastmod>
   </url>
 </urlset>

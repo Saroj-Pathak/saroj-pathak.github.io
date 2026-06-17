@@ -45,7 +45,7 @@ body {
 /* --- Navbar --- */
 .sp-nav {
   position: sticky;
-  top: 0;
+  top: 1;
   z-index: 100;
   background: var(--bg);
   border-bottom: 1px solid var(--border);
@@ -53,7 +53,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 56px;
+  height: 60px;
 }
 
 .sp-nav-logo {
@@ -346,11 +346,11 @@ hr {
   color: var(--text-muted);
 }
 
-/* .sp-footer-copy {
+.sp-footer-copy {
   font-size: 0.78rem;
   color: var(--text-muted);
   font-style: italic;
-} */
+}
 
 .sp-footer-links {
   display: flex;
@@ -453,3 +453,267 @@ hr {
     gap: 0;
   }
 }
+
+.sp-insights-header {
+  background: #efeff8cc;
+  padding: 3rem 2rem 2.5rem;
+}
+
+.sp-insights-title {
+  display: block;
+  font-family: var(--font-serif);
+  font-size: clamp(2rem, 4vw, 2.6rem);
+  color: #002147;
+  margin-bottom: 0.5rem;
+}
+
+.sp-insights-subtitle {
+  display: block;
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  color: var(--text-muted);
+}
+
+
+/* show them again inside main content area */
+.quarto-listing {
+  margin-top: 2rem;
+} 
+
+.quarto-title-block { display: none !important; }
+
+
+/* ============================================
+   BLOG LISTING — Quarto "default" type (blogs.qmd)
+   ============================================ */
+ 
+   .quarto-post {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 2rem;
+    margin-bottom: 2rem;
+    transition: background var(--transition);
+  }
+   
+  .quarto-post .metadata {
+    display: none; /* date/reading-time are restyled inline under the title below instead */
+  }
+   
+  .quarto-post .thumbnail {
+    flex: 0 0 280px;
+    max-width: 280px;
+    margin-right: 2rem;
+  }
+   
+  .quarto-post .thumbnail img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 4px;
+  }
+   
+  .listing-title {
+    font-family: var(--font-serif);
+    font-size: 1.4rem;
+    font-weight: 400;
+    color: var(--text);
+    margin-bottom: 0.3rem;
+  }
+   
+  .listing-date,
+  .listing-reading-time {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+   
+  .listing-date::after {
+    content: "•";
+    margin: 0 8px;
+    color: var(--border);
+  }
+   
+  .listing-description {
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    font-weight: 300;
+    color: var(--text-muted);
+    line-height: 1.6;
+    margin-top: 0.6rem;
+  }
+   
+  .listing-categories .listing-category {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: var(--accent-dim);
+    padding: 2px 8px;
+    border-radius: 2px;
+  }
+   
+   
+  /* ============================================
+     GRID LISTING — Quarto "grid" type
+     (index.qmd's #recent-research preview cards)
+     ============================================ */
+   
+  #recent-research .card {
+    border: none;
+    border-radius: 0;
+    border-bottom: 1px solid var(--border);
+    box-shadow: none;
+  }
+   
+  #recent-research .card-img-top {
+    height: 160px;
+    object-fit: cover;
+    border-radius: 4px;
+  }
+   
+  #recent-research .card-title {
+    font-family: var(--font-serif);
+    font-size: 1.1rem;
+    color: var(--text);
+  }
+   
+  #recent-research .card-text {
+    font-family: var(--font-sans);
+    font-size: 0.88rem;
+    color: var(--text-muted);
+  }
+   
+   
+  /* ============================================
+     TABLE OF CONTENTS (toc-location: left on post pages)
+     ============================================ */
+   
+  #TOC a.active,
+  #TOC li.active > a {
+    background: none !important;
+    color: var(--accent) !important;
+    font-weight: 500;
+    border-left: 2px solid var(--accent);
+    padding-left: 8px;
+  }
+   
+  #TOC a:hover {
+    background: transparent !important;
+    color: var(--accent);
+  }
+   
+   
+  /* ============================================
+     BREADCRUMBS (bread-crumb: true)
+     ============================================ */
+   
+  .quarto-title-breadcrumbs {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+   
+  .quarto-title-breadcrumbs a {
+    color: var(--text-muted);
+    text-decoration: none;
+  }
+   
+  .quarto-title-breadcrumbs a:hover {
+    color: var(--accent);
+  }
+   
+   
+  /* ============================================
+     CATEGORY FILTER SIDEBAR (categories: true on blogs.qmd)
+     Note: if this doesn't visually apply, open devtools on
+     the rendered page and confirm the actual class name —
+     it has shifted slightly between Quarto versions.
+     ============================================ */
+   
+  .quarto-listing-category-sidebar {
+    border-left: 1px solid var(--border);
+    padding-left: 1.5rem;
+    position: sticky;
+    top: 100px;
+    height: fit-content;
+  }
+   
+  .quarto-listing-category-title {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 0.8rem;
+  }
+   
+  .quarto-listing-category {
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    color: var(--text);
+  }
+   
+  .quarto-listing-category.category-selected,
+  .quarto-listing-category:hover {
+    color: var(--accent);
+  }
+   
+   
+  /* ============================================
+     "READ NEXT" / RELATED POSTS
+     ============================================ */
+   
+  .read-next-container .quarto-grid-item {
+    border: 1px solid var(--border);
+    transition: transform var(--transition), border-color var(--transition);
+  }
+   
+  .read-next-container .quarto-grid-item:hover {
+    transform: translateY(-3px);
+    border-color: var(--accent);
+  }
+   
+  #listing-read-next .listing-title {
+    font-family: var(--font-serif);
+    font-size: 1rem;
+    font-weight: 400;
+  }
+   
+  #listing-read-next .listing-date {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-muted);
+  }
+   
+   
+  /* ============================================
+     LEAD TEXT — optional utility class for post intros
+     Usage: wrap a paragraph in ::: {.lead-text} ... :::
+     ============================================ */
+   
+  .lead-text {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 1.2rem;
+    color: var(--text);
+    line-height: 1.6;
+    border-left: 3px solid var(--accent);
+    padding-left: 1.2rem;
+    margin: 2rem 0;
+  }
+   
+   
+
+  
+  
+  #quarto-margin-sidebar {
+    padding-top: 10.5rem; /* nudge until "Categories" lines up with "Latest Posts" */
+  }
+
+
