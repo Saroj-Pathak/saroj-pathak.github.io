@@ -13,7 +13,7 @@ format:
 knitr:
     opts_chunk: 
       dev: "ragg_png"
-categories: [health, budget]
+categories: [education, budget, fiscal transer]
 title-block-banner: "#efeff8cc" 
 title-block-banner-color: "#002147" 
 image: "image/cover.png"

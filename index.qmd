@@ -32,7 +32,7 @@ gap between highest and lowest per-capita grant allocation across Nepal's 753 lo
 :::
 
 ::: {.sp-stat-card}
-[r ≈ 0]{.sp-stat-number}
+[r ≈ -0.23]{.sp-stat-number}
 
 correlation between education conditional grant and student-teacher ratio — the formula ignores actual need
 
@@ -40,11 +40,11 @@ correlation between education conditional grant and student-teacher ratio — th
 :::
 
 ::: {.sp-stat-card}
-[98×]{.sp-stat-number}
+[$r^2 = 0.11$]{.sp-stat-number}
 
-the government's green tax projection versus first-year actual collections — a forensic budget finding
+population doesnt no explain budget allocation at primary care for human resources at local level
 
-[FCGO · Budget Speech 2083–84]{.sp-stat-source}
+[Ministry of Health and Population · Budget Speech & Fiscal Transfer 2080–81]{.sp-stat-source}
 :::
 :::
 :::
