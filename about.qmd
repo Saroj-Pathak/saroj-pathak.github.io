@@ -18,33 +18,25 @@ format:
 
   <h2 class="sp-about-section-title">What I do</h2>
   <div>
-    <p> I work at the intersection of public data and policy decisions — taking 
-        administrative and fiscal records that governments produce but rarely 
-        interrogate, and turning them into evidence that decision-makers can 
+    <p> I work at the intersection of public data and policy decisions,taking 
+        administrative and fiscal data that governments produce but rarely 
+        interrogate and turning them into evidence that decision-makers can 
         act on.</p>
     <p>
       My focus is Nepal's intergovernmental fiscal system: how federal 
       resources flow to provincial and local governments, whether that flow 
       reflects stated policy priorities, and where the gaps between allocation 
       logic and actual outcomes are widest. I work across health, education, 
-      agricultural policy, and electoral analytics — not because these are 
-      separate interests, but because the same fiscal architecture shapes all 
-      of them.
+      agricultural policy which is part of the same fiscal architecture that shapes each of these verticles.
     </p>
-    <p>
-      The clients and organisations I work with need more than charts — they 
-      need a clear answer to a hard question. My work is oriented toward that 
-      answer, not toward the data itself.
-    </p>
+  
   </div>
 
   <h2 class="sp-about-section-title">How I work</h2>
   <div>
     <p> 
       All analysis is produced in R and published as reproducible Quarto 
-      documents. I work directly from primary sources — Ministry of Finance 
-      budget data, MoFAGA conditional grant records, Election Commission 
-      results, and household survey microdata — rather than aggregated 
+      documents. I work directly from primary sources, such as those from Ministry of Finance's budget data, conditional grant records from various ministries and government entities, and household survey microdata, rather than aggregated 
       secondary sources.
       </p>
     <p>
@@ -62,14 +54,14 @@ format:
       I am based in Kathmandu. My work on Nepal's fiscal decentralisation 
       has covered health workforce financing, basic education conditional 
       grants, out-of-pocket health expenditure, and electoral constituency 
-      analysis. Earlier work includes trade policy — specifically 
-      Nepal's sugarcane sector and import duty structures.
+      analysis. Earlier work includes trade policy involving
+      Nepal's sugarcane sector and Nepal's trade landscape.
     </p>
     <p>
       I am available for consulting engagements, research collaborations, 
       and analytical commissions. If your organisation needs someone who 
       can move between government budget documents and actionable 
-      policy recommendations — and produce the analysis in between — 
+      policy recommendations, and produce the analysis in between,
       I would be glad to talk.
 
     </p>
