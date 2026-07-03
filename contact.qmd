@@ -26,7 +26,7 @@ format:
     </p>
 
     <a href="mailto:saroz.pathak@gmail.com" class="sp-contact-email">
-      saroz.pathak@email.com
+      saroz.pathak@gmail.com
     </a>
 
   </div>
