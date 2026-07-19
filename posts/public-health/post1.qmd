@@ -1169,7 +1169,7 @@ girafe(
 
 ## Key Takeaways
 
--   The primary health service (ie प्राथमिक स्वास्थ्य सेवा) comprises the highest budgetary allocation (20.64 billion) among conditional loan provided which provided to Local Level for health related expenses. The government guideline makes it clear that the expenses under this heading is related to salary and allowances for the human resources working at the heath facilities at local level. **The data exercise makes it very clear that budgetary allocation under this subheading is not strong function of population**
+-   The primary health service (ie प्राथमिक स्वास्थ्य सेवा) comprises the highest budgetary allocation (20.64 billion) among conditional grant (under fiscal transfer) provided which provided to Local Level for health related expenses. The government guideline makes it clear that the expenses under this heading is related to salary and allowances for the human resources working at the heath facilities at local level. **The data exercise makes it very clear that budgetary allocation under this subheading is not strong function of population**
 
 -   Subnational level health indicator (LG level) could be used to evaluate the efficiency of budgetary allocation.
 
