@@ -109,14 +109,13 @@ theme_map <- theme(
 
 ```
 
-
 ## Overview
 
-Ministry of Health and Population is one of the biggest spender of federal Budget in Nepal. A significant portion of its budget constitutes conditional grants to 753 local governments. This data brief is an attempt to analyse and explore patterns and trends of budgetory allocation of conditional grants for salaries and allowances of health personel working at local level.
+Ministry of Health and Population is one of the biggest spender of federal Budget in Nepal. A significant portion of its budget constitutes conditional grants to 753 local governments. This data brief is an attempt to analyse and explore patterns and trends of budgetary allocation of conditional grants for salaries and allowances of health personnel working at local level.
 
 ## Basic Snapshot of the dataset
 
-The data used in this breif is of the FY80-81 and following is the provides allocation of conditional grants to local level in various heading.
+The data used in this brief is of the FY80-81 and following is the provides allocation of conditional grants to local level in various heading.
 
 ### Program wise expenses
 
@@ -327,13 +326,13 @@ lgbudget |>
     ),
     axis.title = element_text(
       family = "Gill Sans"
-    )
+    ), plot.background = element_rect()
   )
 
 
 ```
 
-As per the IQR critereon of identifying outlier, there exists 28 LG which are categorised as outlier; for the purpose of this data exercise only 4 (extreme outliers) observations are considered as outliers which includes budget allocated at Pokhara Metro, Birgunj Metro, Godavari Municipality and Bharatpur Metro.
+As per the IQR criterion of identifying outlier, there exists 28 LG which are categorized as outlier; for the purpose of this data exercise only 4 (extreme outliers) observations are considered as outliers which includes budget allocated at Pokhara Metro, Birgunj Metro, Godavari Municipality and Bharatpur Metro.
 
 ```{r}
 #| echo: false
@@ -519,7 +518,7 @@ map |>
   theme(
     legend.text = element_text(
       size = 7
-    )
+    ), plot.background = element_rect()
   )
 
 
@@ -527,11 +526,11 @@ map |>
 
 ```
 
-@fig-map-budget-primary-health above doesnt plot (in order not to skew the data) four LG identified as outlier above (ie Pokhara Metro, Birgunj Metro, Godavari Municipality and Bharatpur Metro).
+@fig-map-budget-primary-health above doesn't plot (in order not to skew the data) four LG identified as outlier above (ie Pokhara Metro, Birgunj Metro, Godavari Municipality and Bharatpur Metro).
 
 ## Equity Analysis
 
-Lets make an attempt to evaluate whether the budget allocation is proportional to population size accross local level governments in Nepal.
+Lets make an attempt to evaluate whether the budget allocation is proportional to population size across local level governments in Nepal.
 
 ```{r}
 #| echo: false
@@ -598,12 +597,12 @@ budget.population |>
     ),
     axis.title = element_text(
       size = 15
-    )
+    ), plot.background = element_rect()
   )
 
 ```
 
-@fig-equity-analysis-lm attempts to visualise the relationship between population (in 1000s) and total budget allocation (in 10 million). A linear regression line with a confidence interval is included to show the general trend between population size and budget allocation.
+@fig-equity-analysis-lm attempts to visualize the relationship between population (in 1000s) and total budget allocation (in 10 million). A linear regression line with a confidence interval is included to show the general trend between population size and budget allocation.
 
 Following are the key observations based on the chart:
 
@@ -611,7 +610,7 @@ Following are the key observations based on the chart:
 
 -   **The low R² value**: the low R² value (0.11) suggests that population alone does not strongly explain budget allocation. Only **11% of the variation** in the budget is explained by population alone. Other factors (eg policy decisions, political considerations) could be at play.
 
--   **The Curious Case of Six Metros**: Pokhara, Birgunj and Bharatpur recieve higher budget than predicted by the linear model based on the population size. Similarly, Lalitpur, Biratnagar and Kathmandu recieves significantly low amount of budget than prediction. This too further substantiates that (in this case Metros) population alone is not the main driver of budget allocation.
+-   **The Curious Case of Six Metros**: Pokhara, Birgunj and Bharatpur received higher budget than predicted by the linear model based on the population size. Similarly, Lalitpur, Biratnagar and Kathmandu received significantly low amount of budget than prediction. This too further substantiates that (in this case Metros) population alone is not the main driver of budget allocation.
 
 -   **Explaining Linear Model and Coefficient** The regression equation shown in the plot is:$$y = 2.43 \times 10^{+7} + 80.5x$$
 
@@ -668,14 +667,14 @@ budget.population |>
     ),
     strip.text = element_text(
       size = 12
-    )
+    ), plot.background = element_rect()
   )
 
 ```
 
 @fig-provinces-lm illustrates relationship between total budget allocated and population along with a simple linear model for each provinces. Following observations can be made:
 
--   In Gandaki and Madhesh Province, the R² is singinificantly higher (at 0.52) than other Provinces. This implies that there is moderately strong positive correlation between population and total budget allocated in these Provinces. This also means that 52% of variance in budget allocation can be explained by the population.
+-   In Gandaki and Madhesh Province, the R² is significantly higher (at 0.52) than other Provinces. This implies that there is moderately strong positive correlation between population and total budget allocated in these Provinces. This also means that 52% of variance in budget allocation can be explained by the population.
 
 -   In Koshi and Sudur Paschim, the R² value is \< 0.01, this means population cannot be considered a predictor for total budget allocation.
 
@@ -685,6 +684,8 @@ budget.population |>
 #| echo: false
 #| warning: false
 #| column: page
+#| fig-width: 12
+#| fig-height: 10
 #| label: fig-map-per-capita-budget
 #| fig-cap: Heat map representing Per capita budget allocation for each LG
 
@@ -741,7 +742,6 @@ map.plot |>
     size = 0.25
   ) +
   scale_color_identity() +
-  
   labs(
     title = "Per Capita Budget Allocation Per LG on Primary Health Services - Salaries and Allowances",
     subtitle = "(Per capita spending on health workers at Local Level)",
@@ -753,7 +753,7 @@ map.plot |>
   )+
   theme(
     legend.text = element_text(size = 5),
-    plot.title = element_text(size = ,
+    plot.title = element_text(size = 16, face = "bold",
       vjust = -2, margin = margin(t = 5, b = 10)
     ),
     plot.subtitle = element_text(
@@ -764,12 +764,13 @@ map.plot |>
     plot.caption = element_text(
       face = "italic",
       size = 8
-    )
+    ),
+    plot.background = element_rect()
   ) -> plot.percapita
 
 girafe(
   ggobj = plot.percapita
-)
+  )
 
 
 
@@ -825,7 +826,7 @@ budget.population |>
     ),
     axis.title = element_text(
       family = "Gill Sans"
-    )
+    ), plot.background = element_rect()
     )
 
 
@@ -890,7 +891,7 @@ budget.population |>
     ),
     axis.title = element_text(
       family = "Gill Sans"
-    )
+    ), plot.background = element_rect()
   )
   
 
@@ -945,7 +946,7 @@ budget.population |>
     ),
     axis.title = element_text(
       family = "Gill Sans"
-    )
+    ), plot.background = element_rect()
   )
 
 
@@ -992,7 +993,7 @@ budget.population |>
     legend.position = "top",
      plot.title = element_text(
       hjust = 0.5
-    )
+    ), plot.background = element_rect()
   ) -> gg_point
 
 girafe(
@@ -1043,7 +1044,7 @@ budget.population |>
     legend.position = "top",
      plot.title = element_text(
       hjust = 0.5
-    )
+    ), plot.background = element_rect()
   ) -> gg_point_rm
 
 
@@ -1058,7 +1059,7 @@ girafe(
 
 ```
 
-The higher Per Capita Budget are in the mountainous Local Level mostly of Gandaki Province (Mustang and Manang) and of Karnali Province. If we are to discard any Local Level with more than 3000 per capita budget (assuming these are mostly mountanous LG with disproportionately lower population) the plot will appear as follow:
+The higher Per Capita Budget are in the mountainous Local Level mostly of Gandaki Province (Mustang and Manang) and of Karnali Province. If we are to discard any Local Level with more than 3000 per capita budget (assuming these are mostly mountainous LG with disproportionately lower population) the plot will appear as follow:
 
 ::: panel-tabset
 ### Rural Municipality
@@ -1098,7 +1099,7 @@ budget.population |>
     legend.position = "top",
      plot.title = element_text(
       hjust = 0.5
-    )
+    ), plot.background = element_rect()
   ) -> gg_point_rm_scale
 
 
@@ -1149,7 +1150,8 @@ budget.population |>
     legend.position = "top",
      plot.title = element_text(
       hjust = 0.5
-    )
+    ),
+    plot.background = element_rect()
   ) -> gg_point_mun
 
 
@@ -1165,7 +1167,7 @@ girafe(
 ```
 :::
 
-@fig-perCapita-rm-scaled provides a better prospective into the relationship between the population and per capita budget; with increase in volume of population the variation around the trendline seems to be reduced. However, such reduction aint as encouraging; for example Joshipur Rural Municipality of Sudur Psachim with population 37 thousands and 2 hundred people have a per capita budget of NPR 393 per person, while another Palhinandan rural municipality with similar population has NPR 877 per capita budget. Similar phenomenon can be observed among Municipalities as illustrated in @fig-perCapita-mun
+@fig-perCapita-rm-scaled provides a better prospective into the relationship between the population and per capita budget; with increase in volume of population the variation around the trendline seems to be reduced. However, such reduction is not as encouraging; for example Joshipur Rural Municipality of Sudur Psachim with population 37 thousands and 2 hundred people have a per capita budget of NPR 393 per person, while another Palhinandan rural municipality with similar population has NPR 877 per capita budget. Similar phenomenon can be observed among Municipalities as illustrated in @fig-perCapita-mun
 
 ## Key Takeaways
 
