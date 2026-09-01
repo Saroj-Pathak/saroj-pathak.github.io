@@ -1,0 +1,1025 @@
+---
+title: "Who's Really Competing? A Screening Approach to Contractor Concentration in Nepal's Public Procurement"
+format:
+  html:
+    toc: true
+    bread-crumbs: true
+    toc-location: right
+    toc-title: "In this Article"
+    code-fold: true
+    code-summary: "Show code"
+    page-layout: article
+    fontsize: 19px
+    mainfont: "Gill Sans"
+    css: /styles.css
+    tbl-cap-location: bottom
+    grid:
+      body-width: 1100px     
+      sidebar-width: 250px
+      margin-width: 250px
+      gutter-width: 1.5rem
+execute:
+  echo: false
+  warning: false
+  message: false
+  cache: false
+knitr:
+    opts_chunk: 
+      dev: "ragg_png"
+categories: [Public Procurement, Screening, HHI, Supplier Concentration, Public Finance]
+title-block-banner: "#efeff8cc" 
+title-block-banner-color: "#002147" 
+image: "image/cover.png"
+
+---
+
+
+```{r}
+
+library(tidyverse)
+library(ggplot2)
+library(echarts4r)
+library(gt)
+library(htmlwidgets)
+library(scales)
+library(lubridate)
+library(stringr)
+library(ggrepel)
+library(lubridate)
+
+options(scipen=999)
+
+
+load("data/procurement.RData")
+
+
+contracts_detail |> 
+  mutate(contract_amount = as.numeric(contract_amount)) -> contracts_detail
+
+
+contracts_detail |> 
+  mutate(contractor_name = tolower(contractor_name)) |> 
+  mutate(contractor_name = str_squish(contractor_name)) |> 
+  mutate(contractor_name = gsub("\\.", " ", contractor_name)) -> contracts_detail
+
+
+
+contracts_detail |> 
+  mutate(total_volume = sum(contract_amount), .by = public_entity) |> 
+  mutate(rank = dense_rank(desc(total_volume))) -> contracts_detail
+
+
+contracts_detail |> 
+  mutate(contract_date_d = dmy(contract_date)) -> contracts_detail
+
+
+
+```
+
+
+```{r}
+#| label: summary-stat
+
+
+contracts_detail |> 
+  summarise(
+    total_contracts = n(),
+    total_value = sum(contract_amount, na.rm = T),
+    average_contract = mean(contract_amount, na.rm = T),
+    median_contract = median(contract_amount, na.rm = T),
+    largest_contract = max(contract_amount, na.rm = T),
+    total_contractor = n_distinct(contractor_name)
+  ) -> summary_stat
+
+```
+
+
+
+The design of competitive public procurement works when many qualified suppliers compete for government contracts. When a small number of contractors win most of the value at a given public entity, such concentration is worth a closer look; among other things it can signal a genuinely thin supplier market, or it can signal something narrower such as specification, timelines, or processes that quietly favour a few suppliers. 
+
+This brief attempts to make use of one screening method, the **the Effective Contractor Count (ECC)** derived from the *Herfindahl-Hirschman Index*, to systematically identify public entities participating in Nepal’s e-Government Procurement (e-GP) system that show unusually concentrated contractor bases, using award data from April 26, 2013 to July 30, 2026. The goal of the exercise is not to diagnose potential corruption or any wrong doing but to make a case for a method to identify and shortlist cases where concentration is high enough, and unexplained, to justify further oversight and scrutiny by concerned authorities.  
+
+
+
+
+## Understanding the Data
+
+::: {.columns}
+
+
+::: {.column width="49%"}
+
+There are a total of 3,173 unique awards during this period that ran through e-GP (bolpatra system in Nepal) from a total of 183 different public entities.  Of these `r summary_stat$total_contracts` awards, total of `r summary_stat$total_contractor` unique contractors were involved which amounts to total of `r comma(summary_stat$total_value/1000000)` million worth of service and/or goods procured.
+
+
+Data was scraped from Nepal's e-Government Procurement (e-GP / Bolpatra) system's public contract records page (https://bolpatra.gov.np/egp/loadContractRecordsListPublic).
+
+:::
+
+:::{.column width = "2%"}
+
+:::
+
+::: {.column width="49%"}
+
+```{r}
+#| label: tbl-glance-dateset
+#| tbl-cap: Basic statistics of the dataset
+
+contracts_detail |> 
+  filter(contract_amount >0) |> 
+  summarise(
+    `Public entities` = n_distinct(public_entity),
+    `Total contracts` = n(),
+    `Unique contractors` = n_distinct(contractor_name),
+    `Total value (NPR)` = sum(contract_amount, na.rm = TRUE),
+    `Procurement methods observed` = n_distinct(procurement_method)
+  ) |> 
+  pivot_longer(
+    cols = everything(),
+    names_to = "Metric",
+    values_to = "Value"
+  ) |> 
+  gt() |> 
+  fmt_number(
+    columns = Value,
+    rows = Metric == "Total contracts" |
+           Metric == "Public entities" |
+           Metric == "Unique contractors" |
+           Metric == "Procurement methods observed",
+    decimals = 0
+  ) |> 
+  fmt_currency(
+    columns = Value,
+    rows = Metric == "Total value (NPR)",
+    currency = "INR",
+    decimals = 0
+  ) |> 
+  # cols_label(
+  #   Metric = "",
+  #   Value = ""
+  # ) |> 
+  tab_header(
+    title = md("**Procurement dataset at a glance**")
+  ) |> 
+  opt_table_lines()
+```
+
+:::
+:::
+
+
+```{r}
+#| label: summary-stat-contract-value
+
+contracts_detail |> 
+  filter(contract_amount>0) |> 
+  mutate(contract_amount = contract_amount/1000000) |> 
+  summarise(
+    n = n(),
+    min = min (contract_amount, na.rm = T),
+    q1 = quantile(contract_amount, 0.25, na.rm = T),
+    median = median(contract_amount, na.rm = T),
+    q3 = quantile(contract_amount, 0.75, na.rm = T),
+    p90 = quantile(contract_amount, 0.90, na.rm = T),
+    p99 = quantile(contract_amount, 0.99, na.rm = T),
+    max = max(contract_amount, na.rm = T)
+  ) |> 
+  mutate(
+    max_to_median_ratio = max/median,
+    p99_to_median_ratio = p99/median
+  ) -> stat_summary_value
+
+
+contracts_detail |> 
+  filter(contract_amount>0) |> 
+  group_by(public_entity) |> 
+  summarise(
+    n = n()
+  ) |> 
+  ungroup() |> 
+  summarise(
+    total_entity = n(),
+    total_contract = sum(n),
+    min = min (n),
+    q1 = quantile(n, 0.25),
+    median = median(n),
+    q3  = quantile(n, 0.75),
+    p90 = quantile(n, 0.90),
+    p99 = quantile(n, 0.99),
+    max = max(n)
+  ) |> 
+  mutate(
+    max_to_median_ratio = max/median,
+    p99_to_median_ratio = p99/median
+    ) -> stat_summary_contract
+
+
+
+
+
+
+```
+
+::: {.columns}
+
+::: {.column width="48%"}
+
+::: {.panel-tabset}
+## Contract Count
+```{r}
+#| label: tbl-stat-count
+#| tbl-cap: Descriptive statistics of total award counts 
+
+stat_summary_contract |> 
+  pivot_longer(
+    cols = 1:11
+  ) |> 
+  mutate(name  = case_when(
+    name == "total_entity" ~ "Total Public Entity",
+    name == "total_contract" ~ "Total Awards",
+    name == "min" ~ "Minimum no of Awards",
+    name == "q1" ~ "First Quartile (25th percentile)",
+    name == "median" ~ "Median number of Award",
+    name == "mean" ~ "Average number of Award",
+    name == "q3" ~ "Third Quartile (75th percentile)",
+    name == "p90" ~ "90th Percentile",
+    name == "p99" ~ "99th Percentile",
+    name == "max" ~ "Maximum number of Award",
+    name == "max_to_median_ratio" ~ "Max-to-Median Ratio",
+    name == "p99_to_median_ratio" ~ "Top 1%-to-Median Ratio",
+    TRUE ~ name
+  )) |> 
+  gt() |> 
+   tab_options(column_labels.hidden = T) |> 
+  tab_header(
+    title = md("**Descriptive statistics of award count**"),
+    subtitle = md("*(values in number of awards)*")
+  ) |> 
+  fmt_number(
+    columns = value,
+    decimal = 1
+  ) |> 
+  opt_table_lines()
+
+
+```
+
+## Contract Values
+```{r}
+#| label: tbl-stat-value
+#| tbl-cap: Descriptive statistics of total award values
+
+
+stat_summary_value |> 
+  pivot_longer(
+    cols = 1:10
+  ) |> 
+  mutate(name  = case_when(
+    name == "n" ~ "Total Awards",
+    name == "min" ~ "Minimum Award Value",
+    name == "q1" ~ "First Quartile (25th percentile)",
+    name == "median" ~ "Median Award Value",
+    name == "mean" ~ "Average Award Value",
+    name == "q3" ~ "Third Quartile (75th percentile)",
+    name == "p90" ~ "90th Percentile",
+    name == "p99" ~ "99th Percentile",
+    name == "max" ~ "Maximum Award Value",
+    name == "max_to_median_ratio" ~ "Max-to-Median Ratio",
+    name == "p99_to_median_ratio" ~ "Top 1%-to-Median Ratio",
+    TRUE ~ name
+  )) |> 
+  gt() |> 
+  tab_options(column_labels.hidden = T) |> 
+  tab_header(
+    title = md("**Descriptive statistics of award values**"),
+    subtitle = md("*(in million)*")
+  ) |> 
+  fmt_number(
+    columns = value,
+    decimals = 2
+  ) |> 
+  
+  opt_table_lines()
+
+```
+
+:::
+
+:::
+
+::: {.column width="2%"}
+
+:::
+
+::: {.column width="48%"}
+
+**On awards counts per entity**. As illustrated in the @tbl-stat-count the median entity in this dataset issued just 9 awards. A quarter of entities issued 2 or fewer, and three quarters issued 20 or fewer. At the other end, a handful of entities are far more active. The busiest single entity issued total of 421 awards which is over 46 times the median and the top 1% of entites issued 138 or more. 
+
+What this means is an entity with only 2 or 3 contracts can look fully concentrated simply because there isn't enough activity to spread across multiple contractors and not because anything unusual is happening. **Before measuring contractor concentration, this brief therefore restricts its screening to entities with a meaningful volume of activity.**
+
+**On contract values.** Spending is even more skewed than activity as illustrated in @tbl-stat-value. The median award is worth NPR 5.14 million, but a quarter of awards exceed 21.4 million, and top 1% are worth NPR 1,856 million or more which is at least 360 times the median. The single largest recorded award is worth NPR 11,317, which is approximately 2200 times the median award.  
+
+:::
+
+::: 
+
+Both @tbl-stat-count and @tbl-stat-value points to the same direction that a small number of entities account for disproportionate share of activity, and a small number of awards account for a disproportionate share of spending. Similar, is illustrated by @fig-contracts-per-entity-freq and @fig-contract-value-skew. Measuring contractor concentration by counting awards alone would treat a contractor who won (say) ten awards the same as the one who won a single NPR 1000 million project. This is why for the purpose of this exercise the concentration is measured by award **values**, using the Herfindahl-Hirschman Index, rather than by number of contracts won.  
+
+::: {.columns}
+::: {.column width="48%"}
+```{r}
+#| label: fig-contracts-per-entity-freq
+#| fig-cap: Number of contracts per public entity
+
+contracts_detail |> 
+  group_by(public_entity) |> 
+  summarise(n = n()) |> 
+  ungroup() |> 
+  filter(n <200) |> 
+  ggplot(aes(x = n)) +
+  geom_histogram(binwidth = 5, fill = "#4a90c4", color = "white", boundary = 0) +
+  scale_x_continuous(breaks = c(0,20, 60, 80, 100, 150, 200))+
+  geom_vline(xintercept = 20, linetype = "dashed", color = "#c0392b") +
+  annotate("text", x = 22, y = Inf, label = "Third Quartile(20)",
+           hjust = 0, vjust = 1.5, size = 3, color = "#c0392b") +
+  labs(
+    title = "How many contracts does a typical entity have?",
+    subtitle = "Each bar represents the number of public entities with that many contracts",
+    x = "Number of contracts",
+    y = "Number of entities"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    plot.subtitle = element_text(size = 10.5, color = "grey40"),
+    panel.grid.minor = element_blank(),
+    plot.background = element_rect(),
+    axis.line = element_line(color = "grey50", linewidth = 0.6)
+  )
+
+
+
+
+```
+
+:::
+
+::: {.column width="2%"}
+
+:::
+
+::: {.column width="48%"}
+```{r}
+#| label: fig-contract-value-skew
+#| fig-cap: Distribution of contract values (log scale)
+
+contracts_detail |> 
+  filter(contract_amount > 0) |>   # guard against zero/negative values breaking log scale
+  ggplot(aes(x = "", y = contract_amount)) +
+  geom_boxplot(fill = "#4a90c4", alpha = 0.6, width = 0.3, outlier.alpha = 0.4) +
+  geom_jitter(width = 0.08, alpha = 0.1, size = 0.6, color = "#2c5f8a") +
+  scale_y_log10(labels = scales::label_number(scale = 1e-6, suffix = "M", prefix = "NPR ")) +
+  labs(
+    title = "Contract values are highly uneven",
+    x = NULL,
+    y = "Contract value (log scale)"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    panel.grid.minor = element_blank(),
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    plot.background = element_rect(),
+    axis.line = element_line(color = "grey50", linewidth = 0.6)
+  )
+
+```
+
+:::
+
+::: 
+
+
+
+
+## Measuring Contractor Concentration: The HHI
+
+To measure how concentrated a public entity's contractor base is, this exercise uses the Herfindahl-Hirschman Index (HHI), a standard tool that regulators around the globe use to assess market concentration. HHI is calculated by taking each contractor's share of any entity's total contract value, squaring it, and summing across all contractors. The result ranges from near-zero (spending by the entity spread evenly across many contractors) to 10,000 (a single contractor captures everything). 
+
+HHI score, ranging from near-zero to 10,000, is not intuitive enough and for this reason, this exercise converts it into the Effective Contractor Count (ECC). ECC is the number of equally-sized contractors that would produce the same HHI score. So, ECC value of 8 would mean that an entity's spending is about as concentrated as if it were split evenly among 8 contractors, even if, on paper, twenty contractors won at least one contract in that particular entity. This makes concentration comparable across entities of very different sizes, and easier to reason about than an abstract index score. ECC is calculated as the inverse of the HHI (the sum of each contractor's squared value share at each public entity).
+
+It is to be noted that ECC should be read as a screening indicator and not a verdict of any wrongdoing. A low ECC could genuinely reflect a thin supplier market because of nature of the market or works or services rather than any irregularity in how contracts were awarded. This exercise treats a low ECC as the start of a question, and not the end of one. 
+
+
+
+
+### The ECC across Public Entities 
+
+@fig-ecc-bubble below plots each public entity's effective contractor count (ECC) against its number of contracts (in log scale), with bubble size showing total procurement value. A clear general pattern emerges in the plot; the entities with more awards tend to also have higher ECC, which, makes intuitive sense as more transactions create more opportunities for different contractors to win work. However, this otherwise linear relationship doesn't always hold which is worth noting.
+
+The entities that depart from the general pattern at higher contract volumes are of interest. One entity in particular in the plot stands out which accounts for the largest bubble on the chart yet sits at a comparatively modest ECC given the number of awards it has issued. In other words, its spending is concentrated among relatively few contractors despite substantial transaction volume and total value, which is a very different scenario from an entity with few contracts and low ECC simply because it hasn't transacted enough for competition to emerge. 
+
+By contrast, some entities with moderate-to-high contract counts show notably higher ECC than others, at similar volumes indicating, comparatively broad-based competition for entities of similar size and activity. 
+
+```{r}
+#| label: hhi
+
+hhi <- contracts_detail |> 
+  group_by(public_entity, contractor_name) |> 
+  summarise(
+    total_volume = sum(contract_amount, na.rm = TRUE),
+    total_contract = n(),
+    .groups = "drop"
+  ) |> 
+  group_by(public_entity) |> 
+  mutate(
+    share = total_volume / sum(total_volume),
+    pct = share * 100
+  ) |> 
+  summarise(
+    hhi = sum(pct^2),
+    ecc = 1 / sum(share^2),
+    total_contract = sum(total_contract),
+    total_volume = sum(total_volume),
+    unique_contractors = n_distinct(contractor_name),
+    .groups = "drop"
+  ) |> 
+  arrange(desc(hhi)) 
+  
+
+# contracts_detail |> 
+#   filter(public_entity == "Road Infrastructure Development Office, Kapilvastu") |> 
+#   select(contractor_name, contract_type, contract_amount) |> 
+#   group_by(contractor_name) |> 
+#   summarise(
+#     total_contract = n(), 
+#     total_volume = sum(contract_amount)
+#   ) |> 
+#   ungroup() |> 
+#   mutate(
+#     "%contract" = total_contract/sum(total_contract),
+#     volume = round(total_volume/sum(total_volume)*100,2)
+#     ) |> 
+#   arrange(desc(volume)) |> 
+#   mutate(sn = row_number(), .before = 1) |> 
+#   gt()
+
+
+# contracts_detail |> 
+#   group_by(contractor_name) |> 
+#   summarise(
+#     total_contract = n(),
+#     volume = sum(contract_amount)
+#     ) |> 
+#   ungroup() |> 
+#   mutate(percent = volume/sum(volume)*100) |> 
+#   arrange(desc(percent)) |> 
+#   slice(1:20) |> 
+#   gt() |> 
+#   opt_table_lines()
+
+```
+
+```{r}
+#| label: fig-ecc-bubble
+#| fig-cap: Bubble chart illustrating ECC values and number of contract for public entities 
+
+hhi_plot <- hhi |> 
+  filter(
+    #total_contract < 150,
+    total_volume > 0,
+    is.finite(ecc)
+  )
+
+ggplot(
+  hhi,
+  aes(
+    x = total_contract,     
+    y = ecc,
+    size = total_volume
+  )
+) +
+  geom_point(
+    alpha = 0.5,
+    stroke = 0.3,
+    color = "#2c5f8a",
+    fill = "#4a90c4",
+    shape = 21
+  ) +
+  scale_size_area(
+    max_size = 14,
+    labels = label_number(scale = 1e-6, suffix = "M")
+  ) +
+  scale_x_log10(
+    breaks = scales::log_breaks(base = 2),  
+    labels = scales::label_number(accuracy = 1)
+  ) +
+  labs(
+    title = "Procurement concentration across public entities",
+    subtitle = "Bubble size represents total procurement value",
+    x = "Number of contracts (log scale)",
+    y = "Effective contractor count",
+    size = "Total Procurement value"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16),
+    plot.background = element_rect(),
+    plot.subtitle = element_text(size = 11),
+    axis.title = element_text(size = 9, color = "grey50"),
+    panel.grid.major = element_blank(),
+    legend.position = "right",
+    axis.line = element_line(color = "grey50", linewidth = 0.6)
+  )
+
+
+
+```
+
+
+### The threshold for screening 
+
+**On minimum contract threshold.** Public Entities with few awards issued almost always show low ECC, whether or not real concentration is an issue. There is simply not enough activity to tell the difference. @fig-ecc-vs-contract-log shows this pattern holds roughly around the 20 contracts point which also happens to be the third quartile (see @tbl-stat-count) of the public entity in this dataset. This exercise, therefore, **limits its screening (for contractor concentration) to the public entities with at least 20 awards issued**, which accounts for 25% of total entities in the dataset.
+
+
+
+```{r}
+#| label: fig-ecc-vs-contract-log
+#| fig-cap: Entities with few awards looks to have similar ECC
+
+hhi_filtered <- hhi |> 
+  filter(is.finite(ecc), total_contract > 20) |> 
+  arrange(ecc)
+
+hhi |> 
+  filter(is.finite(ecc)) |> 
+  ggplot(aes(x = total_contract, y = ecc)) +
+  geom_point(alpha = 0.4, color = "#4a90c4", size = 1.8) +
+  geom_smooth(method = "loess", se = TRUE, color = "#c0392b", linewidth = 0.8, span = 0.9) +
+  geom_vline(xintercept = 20, linetype = "dashed", color = "grey40") +
+  annotate("text", x = 21, y = 45,
+           label = "Minimum contract\nthreshold (20)", hjust = 0, size = 2.8, color = "grey40") +
+   scale_x_log10(
+    breaks = scales::log_breaks(base = 2),  
+    labels = scales::label_number(accuracy = 1)
+  ) +
+  scale_y_continuous(
+    breaks = c(0,6,10,15,20)
+  )+
+  labs(
+    title = "ECC and number of awards issued",
+    x = "Number of awards issued",
+    y = "Effective contractor count (ECC)"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold", size = 13, hjust = 0.5),
+    plot.subtitle = element_text(size = 10.5, color = "grey40"),
+    panel.grid.minor = element_blank(),
+    axis.line = element_line(),
+    axis.title = element_text(size = 7, color = "grey50"),
+    plot.background = element_rect()
+  )
+
+
+```
+
+**On maximum ECC threshold.** A two cluster split (k-means) was applied to the entities with sufficient award history (ie total award count above 20). @fig-ecc-kmeans shows the result, a clear boundary emerges around ECC approximately at 5.8, splitting entities with a boundary landing in a visibly empty stretch of the distribution, rather than cutting through a cluster. It is therefore this exercise **adopts ECC < 5.5 as its screening threshold**. 
+
+A combination of minimum of total awards at 20 and maximum of ECC at 5.5 identifies `r nrow(filter(hhi_filtered, ecc < 5.5, total_contract > 20))` entities for closer examination. 
+
+```{r}
+#| label: fig-ecc-kmeans
+#| fig-cap: Two-cluster split of low-ECC entities (k-means)
+
+set.seed(42)
+
+low_end <- hhi_filtered |> 
+  filter(ecc <= 10) |> 
+  mutate(cluster = factor(kmeans(ecc, centers = 2)$cluster))
+
+# calculate the boundary (midpoint between cluster centers)
+centers <- low_end |> 
+  group_by(cluster) |> 
+  summarise(center = mean(ecc)) |> 
+  arrange(center)
+
+boundary <- mean(centers$center)
+
+ggplot(low_end, aes(x = ecc, y = 0, color = cluster)) +
+  geom_point(size = 4, alpha = 0.7) +
+  geom_vline(xintercept = boundary, linetype = "dashed", color = "#c0392b") +
+  annotate(
+    "text", x = boundary + 0.15,
+     y = 0.15, 
+     label = paste0("Cluster boundary (~", round(boundary, 1), ")"), 
+     hjust = 0, size = 3, 
+     color = "#c0392b") +
+  scale_color_manual(
+    values = c("#4a90c4", "#c0392b"), guide = "none"
+    ) +
+  scale_y_continuous(
+    breaks = NULL, limits = c(-0.5, 0.5)
+    ) +
+  labs(
+    title = "Low-ECC entities split into two natural groups",
+    x = "ECC",
+    y = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    panel.grid.major.y = element_blank(), 
+    panel.grid.minor = element_blank(),
+    axis.line = element_line(),
+    plot.background = element_rect()
+    )
+
+
+
+
+```
+
+
+## Public Entities Within the Screening Parameters
+
+
+The 8 public entitites within the set screening parameter (ie ECC less than 5.5 and total awards issued at least 20) are:
+
+
+```{r}
+#| output: asis
+
+hhi_filtered |> 
+  filter(ecc < 5.5, total_contract > 20) |> 
+  distinct(public_entity) |> 
+  pull(public_entity) |> 
+  paste0("- ", x = _) |> 
+  cat(sep = "\n")
+
+
+```
+
+::: {.columns}
+::: {.column width="65%"}
+
+```{r}
+#| label: fig-bubble-threshold
+#| fig-cap: Bubble chart illustrating ECC values and number of contract for public entities within the screening parameter
+
+data <- hhi |> 
+  mutate(public_entity_wrapped = str_wrap(public_entity, width = 25)) |> 
+  filter(ecc < 5.5, total_contract > 20)
+
+ggplot(
+  data,
+  aes(
+    x = total_contract,
+    y = ecc,
+    size = total_volume,
+    label = public_entity_wrapped
+  )) +
+  geom_point(
+    alpha = 0.6,
+    stroke = 0.4,
+    color = "#2c5f8a",
+    fill = "#4a90c4",
+    shape = 21
+  ) +
+  geom_text_repel(
+    size = 2.6,
+    lineheight = 0.85,
+    color = "#333333",
+    max.overlaps = 20,
+    segment.size = 0.2,
+    segment.color = "grey60",
+    seed = 42
+  ) +
+  scale_size_area(
+    max_size = 16,
+    labels = label_number(scale = 1e-6, suffix = "M")
+  ) +
+   scale_x_log10(
+    breaks = scales::log_breaks(base = 2),  
+    labels = scales::label_number(accuracy = 1)
+  ) +
+  scale_y_continuous(
+    breaks = c(1, 2, 3, 4, 6, 8, 10, 15, 20, 25)
+  ) +
+  labs(
+    title = "Procurement concentration across public entities within the screening parameter",
+    subtitle = "Bubble size represents total procurement value",
+    x = "Number of contracts",
+    y = "Effective contractor count",
+    size = "Total procurement\nvalue"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold", size = 11, margin = margin(b = 4)),
+    plot.subtitle = element_text(size = 9.5, color = "grey40", margin = margin(b = 14)),
+    plot.caption = element_text(size = 8, color = "grey55", hjust = 0, margin = margin(t = 10)),
+    plot.background = element_rect(fill = "white", color = "black"),
+    plot.margin = margin(20, 20, 20, 20),
+    panel.grid.minor = element_blank(),
+    panel.grid.major = element_line(color = "grey90", linewidth = 0.3),
+    axis.title = element_text(size = 10.5, color = "grey30"),
+    axis.text = element_text(size = 9, color = "grey40"),
+    legend.position = "right",
+    legend.title = element_text(size = 9.5, face = "bold"),
+    legend.text = element_text(size = 8.5),
+    axis.line = element_line(color = "grey50", linewidth = 0.6)
+  )
+
+
+
+```
+
+
+:::
+
+::: {.column width = "2%"}
+
+
+:::
+
+::: {.column width = "33%"}
+
+@fig-bubble-threshold shows 8 of the flagged entities together, with bubble size indicating total procurement value at each of the entities. In terms of the total procurement portfolio, they are not uniform group. For instance **Krishi Samagri Company Limited**, a government entity that is tasked with procuring agricultural goods, stands out with by far the largest procurement volume among the flagged entities. 
+
+Likewise, the **Road Infrastructure Development Office, Kapilvastu** presents a different pattern. It has the highest number of award issued among the 8 entites that are under the screening parameter, however, its ECC remains the lowest in the group, indicating that a high volume of transactions has not translated into a broader contractor base. 
+
+:::
+
+:::  
+
+<br>
+
+### Let's look into Krishi Samagri Company Limited 
+
+ **Krishi Samagri Company Limited** has highest total contract value among all the public entities. It has issued  total of 43 awards distributed among 5 contractors. Following are the name of the awards with highest (top 5) contract value:  
+
+```{r}
+#| label: krishi-deep-down
+#| output: asis
+
+
+contracts_detail |> 
+  filter(rank == 1) |> 
+  arrange(desc(contract_amount)) |> 
+  slice(1:5) |> 
+  pull(contract_name) |> 
+  paste0("- ", x = _) |> 
+  cat(sep = "\n")
+
+```
+
+From the above, we can see that contracts are mostly fertilizer procurement. The contractors for the Krishi Samagri Company Limited are as follows: 
+
+```{r}
+#| label: krishi-contractor
+#| output: asis
+
+contracts_detail |> 
+  filter(rank == 1) |> 
+  pull(contractor_name) |> 
+  unique() |> 
+  paste0("- ", x = _) |> 
+  cat(sep = "\n")
+
+
+```
+
+From above, we can clearly see that the contractors for **Krishi Samagri Company Limited** are foreign companies, which makes sense, as Nepal does not have facilities for production of chemical fertilizer.
+
+Krishi Samagri Company Limited is the sole public entity in this dataset procuring chemical fertilizer, meaning there is no comparable entity against which to benchmark whether its five contractors represent a "normal" or unusually narrow supplier base for this category. Nepal appears to concentrate all fertilizer procurement in a single entity. This in itself may be worth pondering. 
+
+Whether five contractors constitutes a genuinely competitive slate of the qualified international suppliers for bulk fertilizer imports cannot be determined from award data alone. This is precisely the kind of question planning and tender-stage data could help answer, and is flagged here as a direction for further oversight.
+
+### A Snapshot of the 8 Entities 
+
+```{r}
+#| label: tbl-eccpe
+#| tbl-cap: Public entities within the screening parameters (ECC < 5.5, 20+ contracts)
+
+hhi |> 
+   mutate(rank = dense_rank(desc(total_volume))) |>   # rank among ALL entities by total value, computed before filtering
+  filter(ecc < 5.5, total_contract > 20) |> 
+  mutate(ecc = round(ecc, 2)) |> 
+  arrange(desc(total_volume)) |> 
+  select(rank, public_entity, total_contract, total_volume, unique_contractors, ecc) |> 
+  gt() |> 
+  tab_header(
+    title = md("**Entities flagged for closer review**"),
+    subtitle = "Ranked by total procurement value across all public entities"
+  ) |> 
+  cols_label(
+    rank = "Rank",
+    public_entity = "Public Entity",
+    total_contract = "Contracts",
+    total_volume = "Total Value",
+    unique_contractors = "Contractors",
+    ecc = "ECC"
+  ) |> 
+ fmt_currency(
+    columns = total_volume,
+    currency = "INR",
+    decimals = 1,
+    scale_by = 1e-6,
+    pattern = "{x}M"
+  ) |> 
+  fmt_number(
+    columns = ecc,
+    decimals = 2
+  ) |> 
+  cols_align(
+    align = "center",
+    columns = c(rank, total_contract, unique_contractors, ecc)
+  ) |> 
+  data_color(
+  columns = ecc,
+  colors = scales::col_numeric(
+    palette = c("#c0392b", "#f4d4d0"),
+    domain = c(1.3, 5.4)
+  )) |> 
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_column_labels(everything())
+  ) |> 
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_body(columns = public_entity)
+  ) |> 
+  tab_options(
+    table.font.size = px(13),
+    heading.title.font.size = px(18),
+    heading.subtitle.font.size = px(12),
+    data_row.padding = px(8),
+    table.border.top.style = "none",
+    table.border.bottom.style = "none",
+    column_labels.border.bottom.width = px(2),
+    column_labels.border.bottom.color = "#333333"
+  ) |> 
+  opt_table_outline() |> 
+  tab_source_note(
+    source_note = "Rank reflects position by total procurement value among all 183 public entities in the dataset."
+  )
+
+
+```
+
+
+@tbl-eccpe presents eight entities together. They are not uniform in what they represent. **Krishi Samagri Company Limited** carries by far the largest procurement value (not just among the group but among all public entities in the entire dataset). It is to be noted that it is nearly 20 times the next highest entity in the group making it the single most consequential case in terms of public money used. 
+
+**Road Infrastructure Development Office, Kapilvastu** is the most striking case in the table. Despite total of 53 contracts awarded, which is more than any in the group, its ECC is the second lowest at 1.39, indicating that a small handful of these 53 contractors are involved in majority of the entire procurement portfolio. This is materially different pattern from that of Krishi Samagri Company Limited, where few contractors exist in absolute sense. Here, many contractors nominally participate, effective competition is still extremely low. 
+
+Likewise, **Infrastructure Development Office, Solukhumbu** shows the second lowest ECC in the group (1.66) and that on a comparatively small procurement base, while **Water Supply and Sanitation Division-3, Sindhupalchok**, **Babai Irrigation Project, Baidi, Bardiya**, and **Urban Development and Building Office, Banke** sit closest to the screening threshold and represent more moderate, borderline cases of concentration.
+
+ECC and the @tbl-eccpe tells *how* concentrated an entity's procurement portfolio is, but not *what* that concentration looks like on the ground. @tbl-top-contractor-pe shows the actual leading contractors behind each entity's low score
+
+
+```{r}
+#| label: tbl-top-contractor-pe
+#| tbl-cap: Top Contractors with the share of their contract amount in each of Public Entities with lowest ECC
+
+contracts_detail |> 
+  filter(rank %in% c(7, 8, 31, 35, 68, 94)) |> 
+  arrange(rank) |> 
+  group_by(public_entity) |> 
+  mutate(
+    percent = contract_amount / total_volume * 100,
+    rank_i = dense_rank(desc(contract_amount))
+  ) |> 
+  ungroup() |> 
+  mutate(
+    fltr = case_when(
+      rank == 7  ~ 2,
+      rank == 8  ~ 5,
+      rank == 31 ~ 3,
+      rank == 35 ~ 4,
+      rank == 68 ~ 2,
+      rank == 94 ~ 5
+    )
+  ) |> 
+  group_by(public_entity) |> 
+  filter(rank_i <= fltr) |> 
+  arrange(rank_i) |> 
+  ungroup() |> 
+  select(
+    public_entity,
+    contractor_name,
+    contract_amount,
+    procurement_method,
+    procurement_category,
+    #rank_i,
+    percent
+    #fltr
+  ) |> 
+  gt(groupname_col = "public_entity") |> 
+  tab_header(
+    title = md("**Top contractor concentration**"),
+    subtitle = md(
+      "Selected procurement ranks and the contractors capturing the largest contract volumes"
+    )
+  ) |> 
+  cols_label(
+    contractor_name = "Contractor",
+    contract_amount = "Contract value",
+    procurement_method = "Method",
+    procurement_category = "Category",
+    percent = "Share of entity volume"
+  ) |> 
+  fmt_currency(
+    columns = contract_amount,
+    currency = "INR",
+    decimals = 0
+  ) |> 
+  fmt_number(
+    columns = percent,
+    decimals = 1,
+    pattern = "{x}%"
+  ) |> 
+  cols_align(
+    align = "center",
+    columns = c(procurement_method, procurement_category, percent)
+  ) |> 
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_column_labels(everything())
+  ) |> 
+  tab_style(
+  style = cell_text(
+    align = "center",
+    weight = "bold"
+  ),
+  locations = cells_row_groups()) |> 
+  tab_style(
+    style = cell_fill(color = "#F3F4F6"),
+    locations = cells_body(
+      columns = c(procurement_category, procurement_method)
+    )
+  ) |> 
+  data_color(
+    columns = percent,
+    colors = scales::col_numeric(
+      palette = c("#F1F5F9", "#334155"),
+      domain = c(0, 100)
+    )
+  ) |> 
+  tab_options(
+    table.font.size = px(13),
+    heading.title.font.size = px(20),
+    heading.subtitle.font.size = px(13),
+    row_group.font.weight = "bold",
+    row_group.background.color = "#F8FAFC",
+    data_row.padding = px(7),
+    table.border.top.style = "none",
+    table.border.bottom.style = "none"
+  ) |> 
+  opt_table_outline()
+
+signal <- contracts_detail |> 
+  filter(rank %in% c(7, 8, 31, 35, 68)) |> 
+  group_by(public_entity) |> 
+  mutate(
+    rank_i = dense_rank(desc(contract_amount)),
+    fltr = case_when(
+      rank == 7  ~ 2,
+      rank == 8  ~ 5,
+      rank == 31 ~ 3,
+      rank == 35 ~ 4,
+      rank == 68 ~ 2
+    )
+  ) |> 
+  filter(rank_i <= fltr) |> 
+  summarise(
+    top_n_volume = sum(contract_amount, na.rm = TRUE),
+    total_volume = first(total_volume),
+    concentration = top_n_volume / total_volume,
+    n_contractors = n_distinct(contractor_name),
+    .groups = "drop"
+  )
+   
+
+
+```
+
+
+At contractor-level detail the "low ECC" describes different situations across the public entities.
+
+  - At one extreme, **Road Infrastructure Development Office Kapilvastu** engaged with 53 contractors in total, yet a single firm, *Shree Muktinath Nirman Sewa* captured 84.6% of total procurement volue, while the next-largest contractor received just 2% of the share. It would be interesting to note how the procurement was planned. This could also be a possible management-related risk flag for the entity, as in how and why is one single contract is designed in manner that constitutes 84% of its total procurement amount. It is to be noted that **Infrastructure Development Office, Solukhumbu** exhibits a comparable pattern at a smaller scale (77.2% worth contract to single contractor through single contract). It would noteworthy to look deeper in such pattern among various Infrastructure Development office. 
+
+  - All these awards presented above in @tbl-top-contractor-pe followed a National Competitive Bidding as a procurement method and nearly all fall under the "Works" (construction/infrastructure) category. This means the sharp variation in outcomes from Kapilvastu's near-total dominance by one firm to Gorkha's more distributed pattern cannot be explained by differences in procurement method or broad category of procurement. It points instead towards other entity-level factors such as planning, design and structure of the award within the NCB process itself. And such cannot be fully explained by award level data alone. 
+
+## Recommendations
+
+ This screening exercise was designed to narrow 183 public entities down to a small number of cases warranting closer attention. This by no means is an attempt to diagnose corruption or irregularity or any wrongdoing, which award-level data alone cannot establish. The exercise has led to three directions worth noting: 
+
+  - **Prioritize entity-level review, starting with the evident cases.** Road Infrastructure Development Office, Kapilvastu and Infrastructure Development Office, Solukhumbu stand out even within the flagged group. Both show a pattern where a single contractor seems to have secured over three-quarters of total contract value, despite (in Kapilvastu's case) a large nominal pool of 53 contractors. **Oversight bodies who are often plagued with limited audit capacity could use this kind of screening method to prioritize which entities to examine first, rather than reviewing entities at random or by size alone.**  
+
+  - **Identifying a process-level concentration before intervening.** Not all public entities with low ECC value calls for same response. For example Krishi Samagri Company Limited's concentration is plausibly explained by the nature of goods procured ie fertilizer through foreign companies. It is fundamentally different from the concentration observed in case of Kapilvastu. Hence,  no same fix would apply to both. For example, unbundling contracts to attract more bidders and more contractors would likely help in Kapilvasut's case but would do little to nothing for Krishi Samagri Company Limited. Any remedial response should be matched to the patterns each public entities actually exhibit. 
+
+  - **Limits of award-level data.** Every awards observed and analysed in this exercise was procured through NCB, yet the outcomes ranged from near-total single contractor dominated scenario to more distributed competition. Hence, the dataset clearly has its limitation. A bidding-stage data would substantially improve any screening exercise like this.   
+
+
+
