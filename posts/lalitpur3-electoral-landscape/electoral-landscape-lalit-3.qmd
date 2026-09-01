@@ -1,0 +1,2470 @@
+---
+title: "Electoral Opportunity & Strategic Pathways: A Constituency-Level Assessment of lalitpur-3"
+format:
+  html:
+    toc: true
+    toc-location: right
+    page-layout: article
+    fontsize: 21px
+    mainfont: "Gill Sans"
+    include-in-header: denied.html
+editor: visual
+knitr:
+    opts_chunk: 
+      dev: "ragg_png"
+categories: [election, electoral-analysis, electoral-analytics]
+title-block-banner: "#efeff8cc" 
+title-block-banner-color: "#002147" 
+image: "image/image.png"
+---
+
+```{r}
+#| echo: false
+#| warning: false
+
+
+options(scipen=999)
+
+
+library(dplyr)
+library(tidyverse)
+library(stringr)
+library(sf)
+library(ggplot2)
+library(leaflet)
+library(bslib)
+library(ggtext)
+library(forcats)
+library(gt)
+library(janitor)
+library(ggcirclepack)
+library(jsonlite)
+library(httr)
+library(forcats)
+library(bslib)
+library(bsicons)
+library(scales)
+
+#setwd("/ELECTION - FEDERAL/Lalitpur-3")
+
+load("data/rawmaterial.RData")
+load("data/lalit3.RData")
+load("data/pp-fptp.RData")
+
+
+# load("database/rawmaterial.RData")
+# load("lalitpur3/lalit3.RData")
+# load("database/pp-fptp.RData")
+
+
+fe.district = "ललितपुर"
+fe.no = "3"
+
+fe.name = paste(fe.district, fe.no, sep = "-")
+
+#map <- map_lalitpur
+
+
+map |> 
+  rename("ward" = "NEW_WARD_N") -> map
+
+
+fp_both |> 
+  mutate(
+    party = case_when(
+      party == "राष्ट्रिय प्रजातन्त्र पार्टी (प्रजातान्त्रिक)" ~ "राष्ट्रिय प्रजातन्त्र पार्टी",
+      #party == "नेपाल कम्युनिष्ट पार्टी (एमाले)" ~ "नेपाल कम्युनिष्ट पार्टी (एकीकृत मार्क्सवादी लेनिनवादी)",
+      #party == "नेपाल कम्युनिष्ट पार्टी (माओवादी केन्द्र)(एकल चुनाव चिन्ह)" ~ "एकल चिन्ह गोलाकारभित्र हँसिया हथौडा (नेपाल कम्युनिष्ट पार्टी (माओवादी केन्द्र)/नेपाल समाजवादी पार्टी)",
+      .default = party
+    )
+  ) -> fp_both
+
+fp_both |> 
+  select(name, party, vote, district, fe, year) |> 
+  filter(district == fe.district) |> 
+  filter(fe == fe.no) -> fp
+
+lg.both.code |> 
+  filter(district == fe.district ) |> 
+  filter(!is.na(ward)) |> 
+  rename("LocalBodyName" = "lg",
+         "WardNo" = "ward") |> 
+  mutate(WardNo = as.factor(WardNo)) |> 
+  left_join(
+    consti.fp |> 
+      filter(district_consti == fe.district) |> 
+      filter(federal_no == fe.no) |> 
+      mutate(WardNo = as.factor(WardNo)) |> 
+      select(-SN),
+    by = c("lg_code", "WardNo") 
+  ) |> 
+  filter(federal_no == fe.no) -> ward.level
+
+ward.level |> 
+    mutate(across(
+        .cols = c(result, province, party, gender, 13:19),
+        .fns = factor
+    )) -> ward.level
+
+
+ ward.level |> 
+    mutate(code_fe = paste(lg_code, WardNo, sep = "-")) -> ward.level
+
+
+
+ward.level |> 
+  select(code_fe, lg_consti, LocalBodyName, WardNo) |> 
+  distinct() |> 
+  mutate(name = paste(word(lg_consti, 1), WardNo, sep = "-")) -> fe_name
+
+
+
+
+
+
+
+
+# Fetch the content
+#res <- GET("https://result.election.gov.np/JSONFiles/Election2079/PA/PR/HOR/HOR-46-3.json")
+
+# Parse the content
+#json_data <- content(res, as = "text", encoding = "UTF-8")
+
+# Convert to list
+#parsed <- fromJSON(json_data, flatten = TRUE)
+
+# If it's nested, extract what you need
+#provincial <- as.data.frame(parsed)
+
+provincial <- pp.fptp.both |> 
+  filter(DistrictName == fe.district & CenterConstID == fe.no)
+
+
+rm(pp.fptp.both)
+
+#test <- read_sf("data/lalitpur/Lalitpur_6_Wards.shp")
+
+
+
+
+#test |> 
+ # mutate(
+  #  test = case_when(
+   #   GaPa_NaPa == "Godawari" & NEW_WARD_N %in% c(12, 14) ~ "A",
+    #  GaPa_NaPa == "Lalitpur" & NEW_WARD_N %in% c(1:5, 10, 13:15, 18, 20:29) ~ "B",
+     # .default = "C"
+ # )) |> 
+ #filter(test %in% c("A", "B")) |> 
+ #select(
+  #  DISTRICT, GaPa_NaPa, NEW_WARD_N
+ # ) -> test
+
+
+
+#test |> 
+ # left_join(
+ #  compare_general |> 
+ #   select(GaPa_NaPa, LgName, lg_code, DISTRICT), by = c("DISTRICT","GaPa_NaPa")
+ #    ) |> 
+ # mutate(lg_code = as.factor(lg_code)) |> 
+ # mutate(code_fe = as.factor(paste(lg_code, NEW_WARD_N, sep = "-"))) -> map_lalitpur
+
+#save(map_lalitpur, file = "map-lalit-3.RData")
+
+
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| include: false
+
+
+ # 1. ENP per Post  
+  ward.level |> 
+    group_by(year, code_fe, post) |> 
+    mutate(p_share = vote/sum(vote), na.rm = T) |> 
+    summarise(
+      ENP_post = 1/sum(p_share^2), 
+      totalVote = sum(vote),
+      .groups = "drop") -> enp_post
+
+  # 2. ENP per ward (normalised)
+  enp_post |> 
+    group_by(year, code_fe) |> 
+    summarise(ENP_raw = mean(ENP_post, na.rm = T), .groups = "drop") |> 
+    mutate(ENP_norm = rescale(ENP_raw, to = c(0,1))) -> enp_ward
+
+  # 3. Compute MoV raw
+  ward.level %>%
+    select(year, province_no, party, code_fe, vote, post, lg_consti, WardNo) |> 
+    group_by(year, post, code_fe) |> 
+    arrange(desc(vote), .by_group = TRUE) |> 
+    mutate(percent = vote / sum(vote) * 100) |> 
+    summarise(
+      MoV = percent[1] - ifelse(n() >= 2, percent[2], 0), # if only 1 candidate, second = 0
+      totalVote = sum(vote),
+      dominant_party_post = party[1],
+      .groups = "drop"
+    ) -> ward.mov
+    
+  # 4. Ward-level totals by party (needed to pick dominant_party_ward by total votes)
+  ward_party_totals <- ward.level |> 
+    filter(!is.na(WardNo)) |> 
+    group_by(year, code_fe, party) |> 
+    summarise(totalVote_party = sum(vote), .groups = "drop")
+
+
+# 5. Compute MoV (weighted) and ILV (SD of MoV per post)
+  ward.mov |> 
+    group_by(year, code_fe) |> 
+    summarise(
+      ward_MoV_raw = weighted.mean(MoV, totalVote, na.rm = TRUE),
+      ILV_raw = sd(MoV, na.rm = TRUE),
+      .groups = "drop") |> 
+    mutate(
+      MoV_norm = rescale(ward_MoV_raw, to = c(0, 1)),
+      ILV_norm = rescale(ILV_raw, to = c(0, 1))
+    ) -> mov_ilv
+  
+# 6. Merge ENP + MoV + ILV
+ward_df <- enp_ward |> 
+  left_join(mov_ilv, by = c("year", "code_fe")) %>%
+  mutate(
+    WOI_base = (ENP_norm + (1 - MoV_norm) + ILV_norm) / 3,
+    WOI_weight =  0.5 * (1 - MoV_norm) +
+      0.3 * ENP_norm +
+      0.2 * ILV_norm
+  )
+
+  ward_df |> 
+    filter(year == "79") |> 
+    mutate(
+      abs_cat = case_when(
+        WOI_weight >= 0.65 ~ "A",
+        WOI_weight >= 0.50 ~ "B",
+        WOI_weight >= 0.35 ~ "C",
+        TRUE ~ "D"
+      ),
+      p_rank = percent_rank(WOI_weight),
+      percent_cat = case_when(
+        p_rank >= 0.75 ~ "A", 
+        p_rank >= 0.50  ~ "B",
+        p_rank >= 0.25 ~ "C",
+        TRUE ~ "D"
+      )
+    ) -> indicators
+
+
+
+indicators |> 
+  left_join(
+    fe_name |> 
+      select(code_fe, name), by = "code_fe"
+  ) -> indicators
+
+
+
+
+```
+
+# Diagnostic Analysis of Past Election Results
+
+In this section we will analyse the electoral landscape of the Lalitpur - 3 based on past two election at federal, provincial and local level. It attempts diagnoses past election outcomes to understand how votes were distributed, transferred, and consolidated across parties and candidates. It establishes the empirical foundation upon which the strategic analysis in later sections is built.
+
+## FPTP - Federal Election
+
+::::: grid
+::: g-col-6
+```{r}
+#| echo: false
+#| warning: false
+#| label: fig-fptp-2079
+#| fig-height: 6
+#| fig-cap: Results of FPTP for 2079 election
+
+fp |> 
+  filter(year == "2079") |> 
+  arrange(desc(vote)) |> 
+  slice(1:4) |> 
+  ggplot(
+    aes(
+      x = name,
+      y = vote
+    )
+  ) +
+  geom_col(
+    aes(fill = party)) +
+  coord_flip() +
+  labs(
+    x = " ",
+    y = " ",
+    fill = "",
+    title = paste("FPTP Results of 2079 election for ", fe.name)
+  ) +
+  geom_text(
+    aes(
+    label = vote),
+    fontface = "bold",
+    angle = 270
+  ) +
+  theme_minimal(
+    base_size = 9
+  ) +
+  scale_fill_manual(
+    values = c(
+      "नेपाल कम्युनिष्ट पार्टी (माओवादी केन्द्र)(एकल चुनाव चिन्ह)" = "#d63333",
+      "राष्ट्रिय प्रजातन्त्र पार्टी" = "#ee943f",
+      "राष्ट्रिय स्वतन्त्र पार्टी" = "#0e78ac",
+      "नेपाल कम्युनिष्ट पार्टी (एमाले)" = "#eee176"
+    )
+  )+
+  theme(
+    axis.text = element_text(
+      face = "bold"
+    ),
+    axis.text.x = element_text(
+      size = 6
+    ),
+    plot.background = element_rect(),
+    legend.position = "bottom",
+    plot.margin = margin(t = 10, l = 10, b = 10),
+    plot.title = element_text(
+      face = "bold",
+      size = 14,
+      hjust = 0.5,
+      margin = margin(t = 10, b = 10, l = -10)
+    )
+  )
+
+
+
+
+```
+:::
+
+::: g-col-6
+```{r}
+#| echo: false
+#| warning: false
+#| label: fig-fptp-2074
+#| fig-height: 6
+#| fig-cap: Results of FPTP for 2074 election
+
+fp |> 
+  filter(year == "2074") |> 
+  arrange(desc(vote)) |> 
+  slice(1:4) |> 
+  ggplot(
+    aes(
+      x = name,
+      y = vote
+    )
+  ) +
+  geom_col(
+    aes(fill = party)) +
+  coord_flip() +
+  labs(
+    x = " ",
+    y = " ",
+    fill = "",
+    title = paste("FPTP Results of 2074 election for ", fe.name)
+  ) +
+  geom_text(
+    aes(
+      label = vote),
+    fontface = "bold",
+    angle = 270
+  ) +
+  scale_fill_manual(
+    values = c(
+      "नेपाल कम्युनिष्ट पार्टी (माओवादी केन्द्र)" = "#d63333",
+      "नेपाल कम्युनिष्ट पार्टी (माले)" = "#b1b6e6",
+      "नेपाली काँग्रेस" = "#0c8d59",
+      "विवेकशील साझा पार्टी" = "#76eeec"
+    )
+  )+
+  theme_minimal(
+    base_size = 9
+  ) +
+  theme(
+    axis.text = element_text(
+      face = "bold"
+    ),
+    axis.text.x = element_text(
+      size = 6
+    ),
+    plot.background = element_rect(),
+    legend.position = "bottom",
+    plot.title = element_text(
+      face = "bold",
+      size = 14,
+      hjust = 0.5,
+      margin = margin(t = 10, b = 10, l = -10)
+    ),
+    plot.margin = margin(t = 10, l = 10, b = 10)
+  )
+
+
+
+
+```
+:::
+:::::
+
+::::: grid
+::: g-col-6
+```{r}
+#| echo: false
+#| warning: false
+#| label: tbl-results-fptp
+#| tbl-cap: Proportion of votes recieved by candidates of political parties in last two FPTP election 
+
+fp_both |> 
+  select(name, party, vote, district, fe, year) |> 
+  filter(district == fe.district) |> 
+  filter(fe == fe.no) |> 
+  select(1:3, 6) |> 
+  group_by(year) |> 
+  mutate(percent = round(vote/sum(vote),4)) |> 
+  ungroup() |> 
+  filter(percent > 0.01) |> 
+  select(party, percent, year) |> 
+  spread(year, percent) |> 
+  arrange(desc(`2079`)) |> 
+  (\(x) replace(x, is.na(x), 0))() |> 
+  mutate(sn = row_number(),
+         .before = "party") |> 
+  rename(
+    "क्रस" = "sn",
+    "पार्टि" = "party"
+  ) |> 
+  gt() |> 
+  opt_table_lines() |> 
+  fmt_percent(columns = c(`2074`, `2079`), decimals = 1) |> 
+  tab_options(table.align='left')
+
+
+
+
+```
+:::
+
+::: g-col-6
+<br>
+
+<br>
+
+**Observation** : Making sense of electoral win of Ms Toshima Karki
+
+-   Bibeksheel Sajha managed to get 12.9% vote in the election of 2074. This in intself is an indication of demand for newer face in the constituency !
+
+-   NC, which was a significant political force, opted to support CPN-Moaist candidate in the election.
+
+Beside other obvious and immediate political circumstances, above two reasons provided an impetus to RSP resulting a big margin of victory, which otherwise, could have been a tight race.
+:::
+:::::
+
+<br>
+
+## Voter Base of Major Political Parties
+
+### Compare PR and FPTP votes of 2079 election
+
+::::: grid
+::: g-col-6
+**Observation**
+
+-   The diffence in votes (PR Vs FPTP) for RSP is highest. Ms Karki recieved \~27% more votes in FPTP than RSP recieved in the PR. *This substantiates the initial claim made earlier about possible swing votes from NC supports shifting to RSP in FPTP election.*
+
+-   UML's vote share of 22.72% in FPTP and 20.44% in PR seems linear, hence can be argued that UML didnt undperform in the fptp election.
+
+-   Similarly, Maoist got 5% more vote in FPTP than in PR - we can presume that at least 50% of such votes that it got in FPTP (\~4000) should be from NC supporters. While the alliance failed miserably in terms of transfering vote from NC to Maoist, the performance of Maoist should be considered *okayis* and not bad in the elction of fptp.
+
+-   It is evident that the significant portion of \~14% vote that NC recieved in FPTP got transferred to RSP in FPTP along with 10% votes of RPP and additional 7% recieved by parties in PR election who had no representation in FPTP.
+
+-   **At least 35% voters with leftist inclination**
+
+-   Candidate selections from NC and RPP will largely determine what happens with RSP or any similar forces in this constituency.
+:::
+
+::: g-col-6
+```{r}
+#| echo: false
+#| warning: false
+#| label: tbl-fptp-pr
+#| tbl-cap: Vote share by major parties in the election of proportional representation and FPTP 
+
+fp.pr |> 
+  filter(name == fe.district) |> 
+  filter(fe == fe.no) |> 
+  select(PoliticalPartyName, TotalVoteReceived) |> 
+  mutate(percent = round(TotalVoteReceived/sum(TotalVoteReceived)*100,2)) |> 
+  mutate(PoliticalPartyName = ifelse(PoliticalPartyName == "एकल चिन्ह  गोलाकारभित्र हँसिया हथौडा (नेपाल कम्युनिष्ट पार्टी (माओवादी केन्द्र)/नेपाल समाजवादी पार्टी)","नेपाल कम्युनिष्ट पार्टी (माओवादी केन्द्र)(एकल चुनाव चिन्ह)", PoliticalPartyName)) |> 
+  mutate(PoliticalPartyName = ifelse(PoliticalPartyName == "नेपाल कम्युनिष्ट पार्टी (एकीकृत मार्क्सवादी लेनिनवादी)", "नेपाल कम्युनिष्ट पार्टी (एमाले)", PoliticalPartyName)) |> 
+  filter(percent > 0.99) |> 
+  left_join(
+    fp |> 
+      filter(year == "2079") |>
+      select(party, name, vote) |> 
+      rename("PoliticalPartyName" = "party"),
+        by = "PoliticalPartyName") |> 
+  arrange(desc(vote)) |> 
+  mutate(
+    percent_vote = round(vote/sum(vote, na.rm = T)*100,2)
+  ) |> 
+  mutate(sn = row_number(), .before = 1) |> 
+  #mutate(name = "XXXX YYYY") |> 
+  (
+    \(x) rename(
+      x, "पार्टि" = colnames(x)[2],
+      "समानुपातिक मत" = colnames(x)[3],
+      "समानुपातिक-%" = colnames(x)[4],
+      "क्रस" = colnames(x)[1],
+      "उमेद्वार" = colnames(x)[5],
+      "प्रत्यक्ष मत" = colnames(x)[6],
+      "प्रत्यक्ष मत-%" = colnames(x)[7]
+      )
+    )() |> 
+    gt() |> 
+    opt_table_lines()
+
+
+```
+:::
+:::::
+
+<br>
+
+::::: grid
+::: g-col-5
+```{r}
+#| echo: false
+#| warning: false
+#| fig-height: 7
+#| label: fig-proportionalvfptp
+#| fig-cap: Pie Chart representing share of vote among parties for election of Proportional Representation based on their participation in the FPTP election
+
+fp.pr |> 
+  filter(name == fe.district) |> 
+  filter(fe == fe.no) |> 
+  select(PoliticalPartyName, TotalVoteReceived) |> 
+  mutate(percent = round(TotalVoteReceived/sum(TotalVoteReceived)*100,2)) |> 
+  mutate(PoliticalPartyName = ifelse(PoliticalPartyName == "एकल चिन्ह  गोलाकारभित्र हँसिया हथौडा (नेपाल कम्युनिष्ट पार्टी (माओवादी केन्द्र)/नेपाल समाजवादी पार्टी)","नेपाल कम्युनिष्ट पार्टी (माओवादी केन्द्र)(एकल चुनाव चिन्ह)", PoliticalPartyName)) |> 
+  mutate(PoliticalPartyName = ifelse(PoliticalPartyName == "नेपाल कम्युनिष्ट पार्टी (एकीकृत मार्क्सवादी लेनिनवादी)", "नेपाल कम्युनिष्ट पार्टी (एमाले)", PoliticalPartyName)) |> 
+  #filter(percent > 0.99) |> 
+  left_join(
+    fp |> 
+      filter(year == "2079") |>
+      select(party, name, vote) |> 
+      rename("PoliticalPartyName" = "party"),
+        by = "PoliticalPartyName") |> 
+  arrange(desc(vote)) |> 
+  mutate(
+    percent_vote = round(vote/sum(vote, na.rm = T)*100,2)
+  ) |> 
+  mutate(sn = row_number(), .before = 1) |> 
+  mutate(test = ifelse(
+    !is.na(percent_vote), T, F
+  )) |>
+  group_by(test) |> 
+  summarise(totalVote = sum(TotalVoteReceived), .groups = "drop") |> 
+  ggplot(aes(x="", y=totalVote, fill = test)) +
+  geom_bar(
+    stat="identity", width=1, color="white") +
+  coord_polar(theta = "y", start = 0)+
+  geom_text(aes(label = paste(
+    round(totalVote/sum(totalVote)*100,2), "%")
+    ), position = position_stack(vjust = 0.5))+
+  scale_fill_manual(values = c("red", "forestgreen"), labels = c("TRUE" = "सहभागी", "FALSE" = "सहभागी नभएको")) +
+  labs(
+    title = str_wrap("समानुपातिक निर्वाचनमा सहभागी भएका मध्ये प्रत्यक्ष निर्वाचनमा सहभागीतिकाको हिसाबमा राजनीतिक दलहरुले प्राप्त मत", width = 60),
+    fill = ""
+  )+
+  theme_void() +
+  theme(
+    plot.background = element_rect(),
+    plot.title = element_text(
+      hjust = 0.5,
+      size = 12,
+      face = "bold",
+      margin = margin(t = 10)
+    ),
+    legend.position = "bottom",
+    legend.margin = margin(b = 10)
+  )
+  
+
+
+
+```
+:::
+
+::: g-col-7
+```{r}
+#| echo: false
+#| warning: false
+#| fig-height: 7
+#| label: fig-fptpminuspr
+#| fig-cap: Bar chart illustrating vote share from election of PR among parties that represented in FPTP
+
+fp.pr |> 
+  filter(name == fe.district) |> 
+  filter(fe == fe.no) |> 
+  select(PoliticalPartyName, TotalVoteReceived) |> 
+  mutate(percent = round(TotalVoteReceived/sum(TotalVoteReceived)*100,2)) |> 
+  mutate(PoliticalPartyName = ifelse(PoliticalPartyName == "एकल चिन्ह  गोलाकारभित्र हँसिया हथौडा (नेपाल कम्युनिष्ट पार्टी (माओवादी केन्द्र)/नेपाल समाजवादी पार्टी)","नेपाल कम्युनिष्ट पार्टी (माओवादी केन्द्र)(एकल चुनाव चिन्ह)", PoliticalPartyName)) |> 
+  mutate(PoliticalPartyName = ifelse(PoliticalPartyName == "नेपाल कम्युनिष्ट पार्टी (एकीकृत मार्क्सवादी लेनिनवादी)", "नेपाल कम्युनिष्ट पार्टी (एमाले)", PoliticalPartyName)) |> 
+  #filter(percent > 0.99) |> 
+  left_join(
+    fp |> 
+      filter(year == "2079") |>
+      select(party, name, vote) |> 
+      rename("PoliticalPartyName" = "party"),
+        by = "PoliticalPartyName") |> 
+  arrange(desc(vote)) |> 
+  mutate(
+    percent_vote = round(vote/sum(vote, na.rm = T)*100,2)
+  ) |> 
+  mutate(sn = row_number(), .before = 1) |> 
+  mutate(test = ifelse(
+    !is.na(percent_vote), T, F
+  )) |>
+  mutate(
+    test = ifelse(PoliticalPartyName == "नेपाल कम्युनिष्ट पार्टी (एकीकृत मार्क्सवादी लेनिनवादी)", T, test)
+  ) |> 
+  filter(test == T) |> 
+  #group_by(PoliticalPartyName) |> 
+  mutate(
+    percent_adjust = round(TotalVoteReceived/sum(TotalVoteReceived)*100,2)
+  ) |> 
+  ggplot(
+    aes(x = PoliticalPartyName, y = percent_adjust)
+  ) +
+  geom_text(
+    aes(label = percent_adjust), nudge_y = 2
+  )+
+  geom_col(
+    fill = 'forestgreen'
+  ) +
+  labs(
+    x = "",
+    y = "",
+    title = str_wrap("समानुपातिक निर्वाचनमा सहभागी मध्येका FPTP मा सहभागी राजनीतिक दलहरुलाई प्राप्त मत - प्रतिशतमा", width = 65)
+  )+
+  coord_flip() +
+  theme_minimal() +
+  theme(
+    plot.background = element_rect(),
+    plot.title = element_text(
+      face = "bold",
+      hjust = 0.5,
+      size = 13,
+      margin = margin(t = 10, b = 30, l = -250)
+    ),
+    axis.text.y = element_text(
+      face = "bold"
+    )
+  )
+
+
+```
+:::
+:::::
+
+<br>
+
+**20% voters were seemingly unrepresented in the FPTP**
+
+-   @fig-proportionalvfptp shows that 20.41% of voters, who voted in the PR, had no representation in the election of FPTP (*including NC voters*). Who did these voters vote in the FPTP ?
+
+-   @fig-fptpminuspr shows proportion of votes recieved (in PR election) by parties who were represented in FPTP (minus the 20.41%).
+
+    -   The vote recieved by the RSP in PR could be seen as something like a brand value of the party. In this context Ms Toshima Karki **over performed** party reputation by around 19.3%. This could be because of cross-party appeal, weak opposition cordination etc.
+
+    -   Simalarly, in case of candidate of Maoist (who was supported by NC), Ms Bhusal clearly underperfomed than combined reputation of NC and Maoist. The clear reason being vote didnt transfer cleanly!
+
+### Estimating voter base of major Political party from local elections - 2079
+
+```{r}
+#| echo: false
+#| fig-width: 12
+#| fig-height: 8
+#| label: fig-wardelection
+#| fig-cap: Vote recieved by major political parties at ward level elections 
+
+ward.level |> 
+  filter(year == "79") |> 
+  group_by(LocalBodyName,post, WardNo, party) |> 
+  mutate(test = ifelse(post == "सदस्य",
+                       row_number(), 10)) |> 
+  ungroup() |> 
+  mutate(post2 = ifelse(post == "सदस्य",
+                        paste(post, test, sep = " "),
+                              paste(post)
+                        )
+         ) |> 
+  mutate(post2 = as.factor(post2)) |> 
+  as.data.frame() |> 
+  group_by(post2, party) |> 
+  summarise(
+    totalvote = sum(vote, na.rm = T), .groups = "drop"
+  ) |> 
+  mutate(
+    percent = round(totalvote/sum(totalvote)*100,4), .by = "post2"
+  ) |> 
+  select(-totalvote) |> 
+  filter(
+    party %in% c("नेपाली काँग्रेस", "नेपाल कम्युनिष्ट पार्टी (एमाले)", "राष्ट्रिय प्रजातन्त्र पार्टी", "जनता समाजवादी पार्टी, नेपाल ", "नेपाल कम्युनिष्ट पार्टी (माओवादी केन्द्र)", "जनमत पार्टी (जपा)" )
+  ) |> 
+  ggplot(
+    aes(
+      x = party,
+      y = percent,
+      group = post2,
+      fill = post2,
+      label = paste(round(percent,1), "%")
+    )
+  ) +
+  geom_col(position = position_dodge(width = 0.9), width = 0.8)+
+  theme_minimal() +
+  scale_fill_brewer(palette = "Set1") +
+  labs(
+    fill = "",
+    x = "",
+    y = "",
+    title = paste("२०७९ मा प्रमुख राजनीतिक दलहरुले ", fe.district, "-", fe.no, " स्थानिय तहको चुनावमा विभिन्न पदहरुमा प्राप्त कुल मत - प्रतिशतमा")
+  )+
+  geom_text(
+    position = position_dodge(width = 0.9),
+    hjust = -0.1,
+    size = 3,
+    angle = 90
+  ) +
+  theme(
+    legend.position = "bottom",
+    plot.title = element_text(
+      face = "bold", 
+      hjust = 0.5,
+      size = 14,
+      margin = margin(b = 15)
+    ),
+    plot.margin = margin(
+      t = 30
+    ),
+    axis.text = element_text(face = "bold")
+  )
+
+```
+
+The local election is a loose but a evidence driven indicator of voter landscape for legacy political parties. It can also be used to serve to analyse indicative ideological inclination of voters at large.
+
+@fig-wardelection suggests a clear left inclined constituency with right wing and centerist or center to left party as strong contendors. Furthermore,
+
+-   The average vote recieved by the parties at ward level is also in line with the vote received by parties in the FPTP electin of 2074 as shown in @tbl-results-fptp.
+
+-   This further supports the claim that the left vote has more or less tranfered to FPTP (though distributed among left parties) and also that the CPN UML's electoral performance of FPTP in 2079 should be considered satisfactory.
+
+<br>
+
+**Lets see if the pattern holds for the election of 2074**
+
+@fig-wardelection74 below has results from the local election of 2074. **What is consistent is the proportion of left-wing votes !**. Also the vote share among major political party at local level seem to have remained constant.
+
+```{r}
+#| echo: false
+#| warning: false
+#| fig-width: 12
+#| fig-height: 8
+#| label: fig-wardelection74
+#| fig-cap: Vote recieved by major political parties at ward level elections
+
+ward.level |> 
+  filter(year == "74") |> 
+  group_by(LocalBodyName,post, WardNo, party) |> 
+  mutate(test = ifelse(post == "सदस्य",
+                       row_number(), 10)) |> 
+  ungroup() |> 
+  mutate(post2 = ifelse(post == "सदस्य",
+                        paste(post, test, sep = " "),
+                              paste(post)
+                        )
+         ) |> 
+  mutate(post2 = as.factor(post2)) |> 
+  as.data.frame() |> 
+  group_by(post2, party) |> 
+  summarise(
+    totalvote = sum(vote, na.rm = T), .groups = "drop"
+  ) |> 
+  mutate(
+    percent = round(totalvote/sum(totalvote)*100,4), .by = "post2"
+  ) |> 
+  select(-totalvote) |> 
+  filter(
+    party %in% c("नेपाली काँग्रेस", "नेपाल कम्युनिष्ट पार्टी (एकीकृत मार्क्सवादी-लेनिनवादी)", "राष्ट्रिय प्रजातन्त्र पार्टी", "जनता समाजवादी पार्टी, नेपाल ", "नेपाल कम्युनिष्ट पार्टी (माओवादी केन्द्र)", "जनमत पार्टी (जपा)" )
+  ) |> 
+  ggplot(
+    aes(
+      x = party,
+      y = percent,
+      group = post2,
+      fill = post2,
+      label = paste(round(percent,1), "%")
+    )
+  ) +
+  geom_col(position = position_dodge(width = 0.9), width = 0.8)+
+  theme_minimal() +
+  scale_fill_brewer(palette = "Set1") +
+  labs(
+    fill = "",
+    x = "",
+    y = "",
+    title = paste("२०७४ मा प्रमुख राजनीतिक दलहरुले ", fe.district, "-", fe.no, " स्थानिय तहको चुनावमा विभिन्न पदहरुमा प्राप्त कुल मत - प्रतिशतमा")
+  )+
+  geom_text(
+    position = position_dodge(width = 0.9),
+    hjust = -0.1,
+    size = 3,
+    angle = 90
+  ) +
+  theme(
+    legend.position = "bottom",
+    plot.title = element_text(
+      face = "bold", 
+      hjust = 0.5,
+      size = 14,
+      margin = margin(b = 15)
+    ),
+    plot.margin = margin(
+      t = 30
+    ),
+    axis.text = element_text(face = "bold")
+  )
+
+
+```
+
+```{r}
+#| echo: false
+#| fig-width: 12
+#| warning: false
+#| eval: false
+
+ ward.level |> 
+  filter(year == "74") |> 
+  group_by(LocalBodyName,post, WardNo, party) |> 
+  mutate(test = ifelse(post == "सदस्य",
+                       row_number(), 10)) |> 
+  ungroup() |> 
+  mutate(post2 = ifelse(post == "सदस्य",
+                        paste(post, test, sep = " "),
+                              paste(post)
+                        )
+         ) |> 
+  mutate(post2 = as.factor(post2)) |> 
+  as.data.frame() |> 
+  group_by(post2, party) |> 
+  summarise(TotalVote = sum(vote),
+            .groups = "drop") |> 
+  filter(party %in% c("नेपाली काँग्रेस",
+                     "नेपाल कम्युनिष्ट पार्टी (एकीकृत मार्क्सवादी-लेनिनवादी)")) |> 
+  group_by(party) |> 
+  mutate(mean = mean(TotalVote)) |> 
+  ungroup() |> 
+  #filter(party == "नेपाली काँग्रेस") |> 
+  ggplot(
+    aes(
+      x = post2,
+      y = TotalVote
+    )
+  ) +
+   geom_segment(
+    aes(
+      xend = post2,
+      yend = fp$vote[fp$party == "नेपाली काँग्रेस" & fp$year == "2074"],
+    ),
+    linewidth =4,
+    color = "#9370db",
+    alpha = 0.3) +
+   coord_flip() +     
+   geom_text(
+    aes(label = TotalVote),
+    nudge_x = 0.2
+   ) +   
+  geom_point(size = 2,
+    fill = "purple",
+    color = "purple",
+    shape = 21,
+    stroke = 2) +
+  geom_hline(yintercept = fp$vote[fp$party == "नेपाली काँग्रेस" & fp$year == "2074"] ,
+             linewidth = 1,
+             color = "green") +
+  geom_hline(yintercept = fp$vote[fp$party == "नेपाल कम्युनिष्ट पार्टी (एमाले)" & fp$year == "2074"] ,
+             linewidth = 1,
+             color = "red")+ 
+  facet_wrap(~ party) +
+  theme_minimal()
+
+
+
+
+
+```
+
+# Electoral Opportunity & Strategic Landscape - Direction for the way ahead !
+
+This section provides a **strategic reading of the constituency’s electoral landscape**, focusing on where political competition exists and where it does not. Instead of treating the constituency as a single homogeneous unit, the analysis breaks it down ward-by-ward to assess fragmentation, competitiveness, and voter volatility.
+
+The indicators presented here—ENP, MoV, ILV, and the Composite Index—are designed to answer three practical campaign questions:
+
+-   Where are voters most open to alternatives?
+-   Where are margins narrow enough to realistically flip?
+-   Where does volatility suggest weak party consolidation?
+
+The output is a clear prioritisation of wards, enabling evidence-based campaign planning rather than intuition-driven targeting.
+
+## ENP - Effective Number of Parties
+
+**Concept**
+
+ENP measures party fragmentation — how many parties are effectively competing in a constituency, weighted by their vote share.
+
+Low ENP → few dominant parties
+
+High ENP → many parties with similar vote shares
+
+**Strategic Value**
+
+1.  Comparative Evaluation of general party fragmentation among other constituency or at ward level.
+
+2.  Prepare ward-level strategy
+
+    -   Wards with high ENP suggests marginal or small disruption creates a greater impact for new entrants -- Non polarised voter signals opportunity for new ideas and ppl.
+
+    -   Ward with low ENP : Strategise based on people's percieved grievances against establashed dominant parties.
+
+3.  Identify wards or segments of wards (such as provincial constituency) with high ENP that gives a good entry point for new entrants
+
+4.  Uniform political campaign strategy for groups of wards (as categories in @tbl-category-enp)
+
+------------------------------------------------------------------------
+
+### ENP - At Federal Level
+
+::::: grid
+::: g-col-6
+```{r}
+#| echo: false
+#| warning: false
+#| layout-ncol: 2
+
+fp |> 
+  mutate(vote_share = round(vote/sum(vote),3), .by = "year") |> 
+  group_by(year) |> 
+  summarise(
+    ENP = round(1/sum(vote_share^2),2),
+    n_parties = n(),
+    dominant_party = party[which.max(vote_share)],
+    total_votes = sum(vote),
+    .groups = "drop"
+  ) |> 
+  rename(
+    "Year" = "year",
+    "Total Parties" = "n_parties",
+    "Dominant Party"  = "dominant_party",
+    "Total Vote Cast" = "total_votes"
+  ) |> 
+  arrange(desc(Year)) |> 
+  gt() |> 
+  opt_table_lines()
+
+
+```
+:::
+
+::: g-col-6
+**Observation**
+
+-   The ENP at 2.77 is **low** suggesting 2 big player and one small player. In absence of NC's candidate, the low value seems natural with the margin RSP candidate has won.
+
+-   Three political party: RSP, CPN-UML and Maoist (Ignoring NC would be a mistake !)
+
+-   Non-legacy party as common denominator in both election: RSP in 2079 and Bibeksheel in 2074, one won and the other was third largest force.
+:::
+:::::
+
+```{r}
+#| layout-ncol: 2
+#| echo: false
+#| warning: false
+#| fig-height: 7
+#| label: fig-top4
+#| fig-cap: Vote share by top four political parties in last two FPTP election
+#| fig-subcap:
+#|   - Vote Share of parties in election of 2079 
+#|   - Vote share of parties in election of 2074
+
+
+fp |> 
+  filter(year == "2079") |> 
+  mutate(
+    party = ifelse(party == "नेपाल कम्युनिष्ट पार्टी (माओवादी केन्द्र)(एकल चुनाव चिन्ह)", "नेकपा (माओवादी)", party)
+  ) |> 
+  mutate(vote_share = round(vote/sum(vote)*100,2), .by = "year") |> 
+  group_by(year) |> 
+  slice(1:4) |> 
+  ggplot(
+    aes(
+      x = party,
+      y = vote_share
+    )
+  ) +
+  geom_col(
+    fill = "forestgreen"
+  ) +
+  geom_text(
+    aes(label = paste(round(vote_share,1), "%")),
+    angle = 270, 
+    nudge_y = 1
+  )+
+  labs(
+    title = "Vote share of top 4 parties for 2079 election",
+    x = " ",
+    y = ""
+  ) +
+  coord_flip() +
+  theme_minimal() +
+  theme(
+    plot.background = element_rect(),
+    plot.title = element_text(
+      face = "bold",
+      size = 13,
+      hjust = 0.5,
+      margin = margin(l = -40, t = 10, b = 10)
+    )
+  )
+  
+
+fp |> 
+  filter(year == "2074") |> 
+  mutate(vote_share = round(vote/sum(vote)*100,3), .by = "year") |> 
+  group_by(year) |> 
+  slice(1:4) |> 
+  ggplot(
+    aes(
+      x = party,
+      y = vote_share
+    )
+  ) +
+  geom_col(
+    fill = "#5971d1"
+  ) +
+   geom_text(
+    aes(label = paste(round(vote_share,1), "%")),
+    angle = 270, 
+    nudge_y = 1
+  )+
+  labs(
+    title = "Vote share of top 4 parties for 2074 election",
+    x = " ",
+    y = " "
+  ) +
+  coord_flip() +
+  theme_minimal() +
+   theme(
+    plot.background = element_rect(),
+    plot.title = element_text(
+      face = "bold",
+      size = 13,
+      hjust = 0.5,
+      margin = margin(l = -40, t = 10, b = 10)
+    )
+  )
+
+
+
+
+
+```
+
+------------------------------------------------------------------------
+
+### ENP - at Provincial Level
+
+::::: grid
+::: g-col-4
+**Observation**
+
+-   Rise on ENP in **Provincial Constituency -क** from 2.93 to 4.12 : Vote Fragmented among legacy parties shows increasing confusion among voter and hence **Prioritise Constituency (क)**. *Also higher vote share at large*
+-   Provincisl Constituency - ख has remained largely stable in terms of total number of political actors invovled.
+-   Also, to be noted that there is rise of ENP in constituency (ख) in 2079 from 2074 -\> competative opening !
+:::
+
+::: g-col-8
+```{r}
+#| echo: false
+#| warning: false
+#| label: tbl-enp-province
+#| tbl-cap: Provincial ENP in last two provincial FPTP election 
+
+provincial |> 
+  group_by(year, SCConstID) |> 
+  mutate(vote_share = round(TotalVoteReceived/sum(TotalVoteReceived),3)) |> 
+  summarise(
+    ENP = round(1/sum(vote_share^2),2),
+    n_parties = n(),
+    dominant_party = PoliticalPartyName[which.max(vote_share)],
+    total_votes = sum(TotalVoteReceived),
+    .groups = "drop"
+  ) |> 
+  arrange(desc(year)
+  ) |> 
+  mutate(SCConstID = ifelse(SCConstID == "1", "क", "ख")) |> 
+  rename(
+    "Year" = "year",
+    "Total Parties" = "n_parties",
+    "Dominant Party"  = "dominant_party",
+    "Province Constituency" = "SCConstID",
+    "Total Vote Cast" = "total_votes"
+  ) |> 
+  gt() |> 
+  opt_table_lines()
+
+
+```
+:::
+:::::
+
+**Lets look into top 4 parties for both constituency over two provincial election**
+
+::::: grid
+::: g-col-7
+```{r}
+#| echo: false
+#| warning: false
+#| label: fig-provincial-top4-79
+#| fig-cap: Vote share by top five parties in the provincial fptp election of 2079
+
+provincial |> 
+  group_by(year, SCConstID) |> 
+  reframe(
+    vote_share = round(TotalVoteReceived/sum(TotalVoteReceived)*100,2),
+    party = PoliticalPartyName
+    ) |> 
+  ungroup() |> 
+  filter(year == "2079") |> 
+  #filter(SCConstID == "1") |> 
+  arrange(desc(vote_share)) |> 
+  group_by(SCConstID, party) |> 
+  reframe(
+    vote_share = sum(vote_share),
+    party = party,
+    year = year,
+    SCConstID = SCConstID
+  ) |> 
+  ungroup() |> 
+  distinct() |> 
+  group_by(SCConstID) |> 
+  arrange(desc(vote_share), .by_group = T) |> 
+  slice(1:5) |> 
+  ungroup() |> 
+  mutate(SCConstID = ifelse(SCConstID == "1", "ललितपुर- ३(क)", "लालितपुर-३ (ख)")) |> 
+  mutate(
+    party = ifelse(
+      party == "नेपाल कम्युनिष्ट पार्टी (माओवादी केन्द्र)(एकल चुनाव चिन्ह)", "नेपाल कम्युनिस्ट पार्टी (माओवादी)", party
+    )
+  ) |> 
+  ggplot(
+    aes(
+      x = party,
+      y = vote_share
+    )
+  ) +
+  geom_col(
+    fill = "forestgreen"
+  ) +
+  geom_text(
+    aes(
+      label = paste(vote_share, "%")
+    ),
+    angle = 270,
+    nudge_y = 2
+  )+
+   theme_minimal()+
+  theme(
+    plot.background = element_rect(),
+    axis.text.y = element_text(
+      face = "bold"
+    )
+  )+
+  facet_wrap(
+    ~SCConstID
+  ) +
+  coord_flip() +
+  labs(
+    x = "",
+    y = ""
+  )
+
+```
+:::
+
+::: g-col-5
+**Observation**
+
+-   RaPraPa is on rise ! from very insignificant presence in 2074 (see @fig-provincial-top4-74)
+
+-   In comparision to the Provincial FPTP, RaPraPa's performance in the federal FPTP is abysmal -- further suggesting vote transfer from RaPraPa to RSP.
+
+-   Even at provincial level, non-legacy force (Bibeksheel and indepedent candidates) have a significant voice at 10% !
+
+-   The chart further suggest the reality that Lalitpur-3 is a left heavy constituency (in terms of party penetration among voters from legacy left leaning forces).
+:::
+:::::
+
+::::: grid
+::: g-col-5
+**Observation**
+
+-   Strong and signficant presence of Bibeksheel Party (ranked 3rd in both provincial constituency) : suggesting a gathering storm !
+
+-   Vote share of NC has remained relatively constant.
+
+-   From 2074 to 2079 the significant rise of vote share of RaPraPa seems to suggest possible swing voters from left leaning parties to RaPraPa (which is interesting !)
+:::
+
+::: g-col-7
+```{r}
+#| echo: false
+#| warning: false
+#| label: fig-provincial-top4-74
+#| fig-cap: Vote share by top five parties in the provincial fptp election of 2074
+
+provincial |> 
+  group_by(year, SCConstID) |> 
+  reframe(
+    vote_share = round(TotalVoteReceived/sum(TotalVoteReceived)*100,2),
+    party = PoliticalPartyName
+    ) |> 
+  ungroup() |> 
+  filter(year == "2074") |> 
+  #filter(SCConstID == "1") |> 
+  arrange(desc(vote_share)) |> 
+  group_by(SCConstID, party) |> 
+  reframe(
+    vote_share = sum(vote_share),
+    party = party,
+    year = year,
+    SCConstID = SCConstID
+  ) |> 
+  ungroup() |> 
+  distinct() |> 
+  group_by(SCConstID) |> 
+  arrange(desc(vote_share), .by_group = T) |> 
+  slice(1:5) |> 
+  ungroup() |> 
+  mutate(SCConstID = ifelse(SCConstID == "1", "ललितपुर- ३(क)", "लालितपुर-३ (ख)")) |> 
+  mutate(
+    party = ifelse(
+      party == "नेपाल कम्युनिष्ट पार्टी (माओवादी केन्द्र)(एकल चुनाव चिन्ह)", "नेपाल कम्युनिस्ट पार्टी (माओवादी)", party
+    )
+  ) |> 
+  ggplot(
+    aes(
+      x = party,
+      y = vote_share
+    )
+  ) +
+  geom_col(
+    fill = "#5971d1"
+  ) +
+  geom_text(
+    aes(
+      label = paste(vote_share, "%")
+    ),
+    angle = 270,
+    nudge_y = 2
+  )+
+   theme_minimal()+
+  theme(
+    plot.background = element_rect(),
+    axis.text.y = element_text(
+      face = "bold"
+    )
+  )+
+  facet_wrap(
+    ~SCConstID
+  ) +
+  coord_flip() +
+  labs(
+    x = "",
+    y = ""
+  )
+
+
+
+
+```
+:::
+:::::
+
+------------------------------------------------------------------------
+
+### ENP - Local Level
+
+::::: grid
+::: g-col-6
+```{r}
+#| echo: false
+#| warning: false
+#| fig-height: 9
+#| label: fig-map-enp-ward
+#| fig-cap: ENP in each ward
+
+map |> 
+  left_join(
+    indicators,
+    by = "code_fe") |> 
+  filter(year == "79") |> 
+  ggplot() +
+  geom_sf(aes(fill = ENP_raw), color = "white", size = 0.15) +
+  # Beautiful continuous color scale (viridis)
+  scale_fill_viridis_c(
+    option = "plasma",     # options: "viridis", "magma", "plasma", "inferno", "cividis"
+    direction = 1,
+    #limits = c(2, 6),
+    name = "ENP"
+  ) +
+  labs(
+    title = "Effective Number of Parties (ENP) by Ward",
+    fill = "ENP"
+  ) +
+  theme_void() +
+  theme(
+    legend.position = "right",
+    plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5),
+    plot.margin = margin(10, 10, 10, 10),
+    panel.background = element_rect(fill = "white", color = NA)
+  )
+
+
+
+```
+:::
+
+::: g-col-6
+```{r}
+#| echo: false
+#| warning: false
+#| fig-height: 9
+#| label: fig-map-enp-ward-cat
+#| fig-cap: Priority categories of each ward based on ENP values
+
+map |> 
+  left_join(
+    indicators |> 
+      select(year, code_fe, ENP_raw) |> 
+        mutate(
+          category = case_when(
+          ENP_raw > 5 ~ "Priority A",
+          ENP_raw > 4 & ENP_raw < 5 ~ "Priority B",
+          ENP_raw > 3 & ENP_raw < 4 ~ "Priority C",
+          .default = "Priority D"
+          )
+        ),
+      by = "code_fe") |>
+      ggplot() +
+      geom_sf(
+        aes(fill = category)
+        ) +
+      scale_fill_viridis_d(
+        option = "plasma",
+        name = "ENP Category"
+        ) +
+      theme_void() +
+      labs(
+        title = "Effective Number of Parties (ENP) by Ward"
+      ) +
+    theme(
+      legend.position = "right",
+      plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+      plot.subtitle = element_text(size = 12, hjust = 0.5)
+    )
+
+
+```
+:::
+:::::
+
+Maps above (@fig-map-enp-ward) has ENP values derived from local elections for each ward; it ranges from 2.5 to 5.8. Higher ENP suggests higher voter fragmentation (means major party has no stronghold and/or consolidated) and lower ENP suggests voter consoldiation and lower voter fragmentation (anything lower than 2.5 is effectively a bipolar race).
+
+Based on the ENP values @fig-map-enp-ward-cat illustrates a priority category for the new party. Below @tbl-category-enp provides list of wards based on cateogory of prioritisation. \[*please note that **Priority 1** in this report suggests wards that should be considered the favourable condition for the new entrants*\]
+
+```{r}
+#| echo: false
+#| warning: false
+#| label: tbl-category-enp
+#| tbl-cap: List of wards based on ENP category 
+
+
+indicators |> 
+  mutate(
+    category = case_when(
+      ENP_raw > 5 ~ "Priority A",
+      ENP_raw > 4 & ENP_raw < 5 ~ "Priority B",
+      ENP_raw > 3 & ENP_raw < 4 ~ "Priority C",
+      .default = "Priority D"
+      )
+    ) |>
+  filter(year == "79") |> 
+  select(code_fe, category, name) |> 
+  group_by(category) |> 
+  arrange(code_fe) |> 
+  summarise(name = str_c(name, collapse = ","), .groups = "drop") |>
+  gt() |>
+  opt_table_lines() 
+  
+
+
+
+
+```
+
+------------------------------------------------------------------------
+
+## Indicator II : Margin of Victory (MoV)
+
+**Concept**
+
+MoV reflects **competitiveness**. It is calcuated as a differece (in percentage point of vote share) between the winner and runner-up (rank 1 and 2).
+
+Smaller MoV -\> Higher chances of contestability or voters are tightly divided
+
+Larger MoV -\> Strong dominance by a single party or voters significantly more inclined towards a dominant party.
+
+**Strategic Value**
+
+1.  The federal MoV, at prime facie, a measure how tightly the constituency is contested with. Lower MoV value is a favourable condition, at large, for the new entrants
+
+2.  Identify segments of wards or invidiual wards with similar traits to formulate similar plans :
+
+    a.  For example in wards with Lower MoV: Higher chances of contestability
+    b.  In case of ward with higher MoV: suggests strong dominance by a single party and hence the startegy could be combination of anti-incumbency agendas along with other relevant measures based on the dominant party.
+
+<br>
+
+### Margin of Victory - federal level
+
+::::: grid
+::: g-col-8
+```{r}
+#| echo: false
+#| warning: false
+
+
+fp |> 
+  group_by(year) |> 
+  mutate(rank = dense_rank(desc(vote))) |> 
+  ungroup() |> 
+  group_by(district) |> 
+  #filter(rank < 4) |> 
+  ungroup() -> fp.rank
+
+
+fp.rank |> 
+  group_by(year) |> 
+  mutate(percent = vote / sum(vote) * 100) |> 
+  summarise(
+    MoV = round(percent[rank == 1] - percent[rank == 2], 2),
+    party = party[rank == 1]
+  ) |> 
+  ungroup() |> 
+  ggplot(aes(x = factor(year), y = MoV, fill = party)) +
+  geom_col(width = 0.5) +
+  geom_line(aes(group = 1), color = "black", linewidth = 0.8) +   # add connecting line
+  geom_point(size = 3, color = "black") +                         # emphasize points
+  geom_text(aes(label = MoV), vjust = -0.6) +
+  labs(
+    title = "Federal Margin of Victory over Two Elections",
+    x = "Election Year",
+    y = "Margin of Victory (%)",
+    fill = ""
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    plot.background = element_rect(),
+    plot.title = element_text(
+      face = "bold",
+      hjust = 0.5,
+      size = 13
+    )
+  )
+
+
+```
+:::
+
+::: g-col-4
+The margin of victor (MoV) for the federal fptp election increased to 31.25% from 2.88%. However, it is to be noted that, this alone shouldnt determine the competitiveness of the the constituency provided special cricumstances as explained in segments above. And RSP is yet to consolidate voters from its initial run !
+:::
+:::::
+
+### MoV - provincial level
+
+```{r}
+#| echo: false
+#| warning: false
+#| include: false
+
+
+provincial |> 
+  group_by(SCConstID, year) |> 
+  rename(vote = TotalVoteReceived, party = PoliticalPartyName) |> 
+  mutate(percent = vote / sum(vote) * 100) |> 
+  mutate(rank = dense_rank(desc(vote))) |> 
+  summarise(
+    MoV = round(percent[rank == 1] - percent[rank == 2], 2),
+    party = party[rank == 1],
+    totalVote = sum(vote),
+    .groups = "drop"
+  ) |> 
+  select(-party) |> 
+  mutate(voteShare = round(totalVote/sum(totalVote)*100,2), .by = year) |> 
+  rename("Constituency" = "SCConstID") |> 
+  mutate(
+    Constituency = ifelse(Constituency == "1", "क", "ख")
+  ) |> 
+  group_by(year) |> 
+  arrange(desc(totalVote), .by_group = T
+  ) |> 
+  ungroup() -> tbl_vote_share_prov
+
+```
+
+<br>
+
+::::: grid
+::: g-col-5
+**Observation**
+
+-   The winning margin (MoV) has decreased in both the constituency.
+
+-   This decrease in MoV in both constituency suggests lack voter consolidation and is vulnerable !
+
+-   To be noted the vote share for each constituency as follow: `r gt(tbl_vote_share_prov)`
+:::
+
+::: g-col-7
+```{r}
+#| echo: false
+#| warning: false
+#| fig-height: 7
+
+provincial |> 
+  group_by(SCConstID, year) |> 
+  rename(vote = TotalVoteReceived, party = PoliticalPartyName) |> 
+  mutate(percent = vote / sum(vote) * 100) |> 
+  mutate(rank = dense_rank(desc(vote))) |> 
+  summarise(
+    MoV = round(percent[rank == 1] - percent[rank == 2], 2),
+    party = party[rank == 1],
+    totalVote = sum(vote),
+    .groups = "drop"
+  ) |> 
+  ggplot(aes(x = factor(year), y = MoV, fill = party, group = SCConstID)) +
+  geom_col(width = 0.5, position = position_dodge(width = 0.6)) +
+  geom_line(aes(y = MoV, color = party), 
+            position = position_dodge(width = 0.6), linewidth = 0.8) +
+  geom_point(aes(color = party), 
+             position = position_dodge(width = 0.6), size = 3) +
+  geom_text(aes(label = MoV), 
+            vjust = -0.5, 
+            position = position_dodge(width = 0.6), size = 3) +
+  facet_wrap(~ SCConstID, ncol = 2, 
+            labeller = as_labeller(c("1" = paste(fe.name,"(क)", sep = " "), "2" = paste(fe.name, "(ख)", sep = " ")))) +
+  labs(
+    title = "Provincial Margin of Victory over Two Elections",
+    subtitle = "By Provincial-Constituency",
+    x = "Election Year",
+    y = "Margin of Victory (%)",
+    fill = ""
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    panel.grid.minor = element_blank(),
+    plot.background = element_rect(),
+    plot.title = element_text(
+      face = "bold",
+      size = 13,
+      hjust = 0.5
+    ),
+    plot.subtitle = element_text(
+      hjust = 0.5
+    )
+  )
+  
+  
+```
+:::
+:::::
+
+<br> <br>
+
+::::: grid
+::: g-col-8
+```{r}
+#| echo: false
+#| warning: false
+#| fig-height: 7
+
+
+prov_summary <- provincial |> 
+  group_by(SCConstID, year) |> 
+  rename(vote = TotalVoteReceived, party = PoliticalPartyName) |> 
+  mutate(percent = vote / sum(vote) * 100) |> 
+  mutate(rank = dense_rank(desc(vote))) |> 
+  summarise(
+    MoV = round(percent[rank == 1] - percent[rank == 2], 2),
+    party = party[rank == 1],
+    totalVote = sum(vote),
+    .groups = "drop"
+  )
+
+# compute weighted mean
+
+prov_weighted <- prov_summary |> 
+  group_by(year) |> 
+  summarise(
+    weighted_MoV = round(weighted.mean(MoV, totalVote, na.rm = TRUE), 2),
+    dominant_party = party[which.max(totalVote)],
+    .groups = "drop"
+  )
+
+
+## visualise combine
+ggplot(prov_weighted, aes(x = factor(year), y = weighted_MoV, fill = dominant_party, group = 1)) +
+  geom_col(width = 0.5) +
+  geom_line(color = "black", linewidth = 0.8) +
+  geom_point(size = 3, color = "black") +
+  geom_text(aes(label = weighted_MoV), vjust = -0.5) +
+  labs(
+    title = "Weighted Provincial Margin of Victory (Combined Segments)",
+    subtitle = "Weighted by total votes across both provincial constituencies",
+    x = "Election Year",
+    y = "Weighted Margin of Victory (%)",
+    fill = "Dominant Party"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    plot.background = element_rect(),
+    plot.title = element_text(
+      face = "bold",
+      size = 13,
+      hjust = 0.5
+    ),
+    plot.subtitle = element_text(
+      hjust = 0.5
+    )
+  )
+
+
+```
+:::
+
+::: g-col-4
+**Observation**
+
+-   Based on weighted Provincial MoV CPN (Maoist) seem to have lost the edge to the CPN UML as the most dominant party in the provincial fptp election. While the MoV has decreased the win for CPN-UML is that it has established itself as a dominant party in the constituency (lalitpur-3) based on fptp performance.
+:::
+:::::
+
+### MoV - Local Level
+
+```{r}
+#| echo: false
+
+# 1) MoV per post × ward (same idea as your original)
+
+per_post <- ward.level %>%
+  #filter(!is.na(WardNo)) %>%
+  #mutate(code_fe = paste(lg_code, WardNo, sep = "-")) %>%
+  select(year, province_no, party, code_fe, vote, post, lg_consti, WardNo) %>%
+  #group_by(year, post, code_fe, party) %>%
+  #summarise(vote = sum(vote), .groups = "drop") %>%
+  group_by(year, post, code_fe) %>%
+  arrange(desc(vote), .by_group = TRUE) %>%
+  mutate(percent = vote / sum(vote) * 100) %>%
+  summarise(
+    MoV = percent[1] - ifelse(n() >= 2, percent[2], 0), # if only 1 candidate, second = 0
+    totalVote = sum(vote),
+    dominant_party_post = party[1],
+    .groups = "drop"
+  )
+
+
+# 2) Ward-level totals by party (needed to pick dominant_party_ward by total votes)
+ward_party_totals <- ward.level %>%
+  filter(!is.na(WardNo)) %>%
+  mutate(code_fe = paste(lg_code, WardNo, sep = "-")) %>%
+  group_by(year, code_fe, party) %>%
+  summarise(totalVote_party = sum(vote), .groups = "drop")
+
+# 3) Ward-level summary: ward_MoV (weighted by post total votes) + dominant_party_ward (by total votes)
+ward_summary <- per_post %>%
+  group_by(year, code_fe) %>%
+  reframe(
+    ILV = sd(MoV, na.rm = TRUE),
+    ward_MoV = weighted.mean(MoV, totalVote, na.rm = TRUE),
+    totalVote_ward = sum(totalVote)
+  ) %>%
+  ungroup() %>% 
+  left_join(
+    ward_party_totals %>%
+      group_by(year, code_fe) %>%
+      slice_max(totalVote_party, n = 1, with_ties = FALSE) %>%
+      rename(dominant_party_ward = party) %>%
+      select(year, code_fe, dominant_party_ward, totalVote_party),
+    by = c("year", "code_fe")
+  ) %>%
+  group_by(year) %>%
+  mutate(
+    # Normalize ILV and MoV within each year
+    ILV_norm = (ILV - min(ILV, na.rm = TRUE)) / (max(ILV, na.rm = TRUE) - min(ILV, na.rm = TRUE)),
+    MoV_norm = (ward_MoV - min(ward_MoV, na.rm = TRUE)) / (max(ward_MoV, na.rm = TRUE) - min(ward_MoV, na.rm = TRUE)),
+    
+    # Composite Window Index
+    CWI = 0.6*(1 - MoV_norm) + (0.4 * ILV_norm),
+    CWI = round(CWI, 3)
+  ) %>%
+  ungroup()
+
+# 4) Constituency-level aggregation: weighted MoV and dominant party by summed votes across wards
+constituency_summary <- ward_summary %>%
+  group_by(year) |> 
+  summarise(
+    constituency_MoV = weighted.mean(ward_MoV, totalVote_ward, na.rm = TRUE)
+  ) %>%
+  # compute dominant party across wards by summing ward total votes by party
+  bind_cols(
+    ward_summary %>%
+      group_by(dominant_party_ward) %>%
+      summarise(votes_by_party = sum(totalVote_ward), .groups = "drop") %>%
+      slice_max(votes_by_party, n = 1, with_ties = FALSE) %>%
+      transmute(dominant_party_constituency = dominant_party_ward)
+  )
+
+ward_summary |> 
+  group_by(year) %>%  # normalize within each election year
+  mutate(
+    NMoV = (ward_MoV - min(ward_MoV, na.rm = TRUE)) / 
+           (max(ward_MoV, na.rm = TRUE) - min(ward_MoV, na.rm = TRUE))
+  ) |> 
+  ungroup() -> nMoV_ward
+```
+
+::::: grid
+::: g-col-6
+```{r}
+#| echo: false
+#| warning: false
+#| label: fig-maps-mov-raw
+#| fig-height: 9
+#| fig-cap: "Ward wise MoV"
+
+
+map |> 
+  left_join(
+    ward_summary, by = "code_fe"
+  ) |> 
+  filter(year == "79") |> 
+  ggplot()+
+  geom_sf(aes(fill = ward_MoV), color = "white", size = 0.1) +
+  scale_fill_viridis_c(option = "plasma", name = "Margin of Victory") +
+  theme_void() +
+  labs(title = "Ward-level Margin of Victory",
+       subtitle = "Computed from local election results") +
+  theme(
+    plot.background = element_rect(),
+    plot.title = element_text(
+      hjust = 0.5
+    ),
+    plot.subtitle = element_text(
+      hjust = 0.5
+    )
+  )
+
+
+
+
+
+```
+:::
+
+::: g-col-6
+```{r}
+#| echo: false
+#| warning: false
+#| label: fig-maps-mov-dominant-party
+#| fig-height: 9
+#| fig-cap: "Dominant party at each ward"
+
+
+map |> 
+  left_join(
+    ward_summary, by = "code_fe"
+  ) |> 
+  filter(year == "79") |> 
+  ggplot() +
+  geom_sf(aes(fill = dominant_party_ward), color = "white", size = 0.1) +
+  scale_fill_brewer(palette = "Set2", name = "Dominant Party") +
+  theme_void() +
+  labs(title = "Dominant Party by Ward") +
+  theme(
+    plot.margin = margin(t = 100, b = 5),
+    plot.background = element_rect(),
+    plot.title = element_text(
+      hjust = 1,
+      face = "bold",
+      vjust = 30
+    )
+  )
+
+```
+:::
+:::::
+
+**Observation**
+
+-   The Margin of Victory (on percent points) among the wards (based on local election) varies from 3.36% to 24.02%.
+-   Based on analysis of dominant parties, we can presume, at ward level, the constituency is left-leaning ! This is also supported by ENP value at federal level where Nepali CPN-Maoist and CPN-EML form top 4 political force in the region.
+
+*We compute dominant party within any ward not based on who wins the ward chair but by taking consideration all 5 seats of the wards. Also to be noted concept of dominant party reflects individual party's ward level penetration and orginisational strength if anything.*
+
+Next, in @fig-map-mov-cat we try to categorise ward based on pre defined cut off values to set priority for wards:
+
+-   Priority A → MoV less than 5%
+-   Priority B → MoV from 5% to 10%
+-   Priority C → MoV from 10% to 15%
+-   Priority D → MoV 15% and more
+
+::::: grid
+::: g-col-6
+```{r}
+#| echo: false
+#| warning: false
+#| fig-height: 7
+#| label: fig-map-mov-cat
+#| fig-cap: Ward wise priority cluster based on MoV
+
+## <5, 5-10, 10-15, 15 and more 
+
+indicators |> 
+  filter(year == "79") |> 
+  select(code_fe, ward_MoV_raw, MoV_norm, name) |> 
+  mutate(
+   category = case_when(
+      ward_MoV_raw <= 5 ~ "Priority A", 
+      ward_MoV_raw > 5 & ward_MoV_raw <= 10 ~ "Priority B", 
+      ward_MoV_raw > 10 & ward_MoV_raw <= 15 ~ "Priority C", 
+      ward_MoV_raw > 15 ~ "Priority D"
+    )
+  ) -> mov_cat
+
+
+map |> 
+  left_join(
+    mov_cat, by = "code_fe"
+  ) |> 
+    ggplot() +
+      geom_sf(
+        aes(fill = category)
+        ) +
+      scale_fill_viridis_d(
+        option = "plasma"
+        ) +
+      theme_void() +
+      labs(
+        title = "Prioity clusters for Margin of Victory (MoV) by Ward",
+        fill = " "
+      ) +
+    theme(
+      legend.position = "right",
+      plot.title = element_text(size = 17, face = "bold", hjust = 0.5),
+      plot.subtitle = element_text(size = 12, hjust = 0.5)
+    )
+
+```
+:::
+
+::: g-col-6
+```{r}
+#| echo: false
+#| warning: false
+#| label: tbl-cat-mov
+#| fig-height: 7
+#| tbl-cap: Prioirity list of wards based on MoV
+
+mov_cat |> 
+  group_by(category) |> 
+  summarise(
+    wards = str_c(name, sep = ",", collapse = ", "), .groups = "drop"
+  ) |> 
+  gt() |> 
+  opt_table_lines(extent = "all")
+  
+  
+
+
+
+```
+:::
+:::::
+
+<br>
+
+### MoV under microscope - Intra-Local Volatality (ILV)
+
+**Concept**
+
+ILV measures **how much voter preference fluctuates** within a ward across elections.
+
+Higher ILV → Suggests higher fluctuation Lower ILV → Suggest lower flucturation
+
+**Strategic Value**
+
+1.  ILV is a measure of spread of MoV values within each ward. Generally, higher ILV (higher flactuation) provides strategic advantage for new political options as voters have not consolidated to any political force.
+
+2.  ILV along with MoV (for each ward) can be used to identify individual wards with strategic values and formulate campaigns plans accordingly.
+
+::::: grid
+::: g-col-7
+```{r}
+#| echo: false
+#| warning: false
+#| label: fig-map-ilv
+#| fig-cap : Ward Level ILV values 
+#| fig-height: 7
+
+map |> 
+  left_join(
+    indicators, by = "code_fe"
+  ) |> 
+    ggplot() +
+      geom_sf(
+        aes(fill = ILV_raw)
+        ) +
+      scale_fill_viridis_c(option = "plasma", name = "ILV") +
+  theme_void() +
+  labs(title = "Ward-level Intra-Local Volatality ILV",
+       subtitle = "Computed from local election results") +
+  theme(
+    plot.background = element_rect(),
+    plot.title = element_text(
+      hjust = 0.5
+    ),
+    plot.subtitle = element_text(
+      hjust = 0.5
+    )
+  )
+
+```
+:::
+
+::: g-col-5
+```{r}
+#| echo: false
+#| warning: false
+#| label: fig-cat-ilv
+#| fig-cap: Categories of ward based on ILV
+#| fig-height: 10
+
+
+indicators |> 
+  filter(year == "79") |> 
+  select(code_fe,name, ILV_raw, ILV_norm) |> 
+  mutate(category = case_when(
+    ILV_raw <= 3 ~ "Very Low Fluctuation",
+    ILV_raw <= 6 & ILV_raw > 3 ~ "Low Fluctuation",
+    ILV_raw <= 10 & ILV_raw > 6 ~ "High Fluctuation",
+    ILV_raw > 10 ~ "Very High Fluctuation"
+  )) |>
+  ggplot(
+    aes(
+      x = fct_reorder(name, ILV_raw),
+      y = ILV_raw,
+      fill = category
+    )
+  ) +
+  geom_col() +
+  theme_minimal() +
+  labs(
+    title = "Ward level and ILV", 
+    x = "", 
+    y = "ILV" ,
+    fill = ""
+  ) +
+  coord_flip() +
+  theme(
+    legend.position = "bottom",
+    plot.title = element_text(
+      hjust = 0.5,
+      size = 15,
+      face = "bold"
+    ),
+    plot.background = element_rect()
+    
+  )
+
+
+```
+:::
+:::::
+
+------------------------------------------------------------------------
+
+### Winnability Index (Composite Index of ILV and MoV)
+
+<br>
+
+The winnability Index is a composite index of ILV and MoV that are combined to provide a single actionable indicator.
+
+The first set of figures below (@fig-hybrid-list and @fig-map-cwi) categories wards based on absolute value of composite index. In this case, there are 4 wards that are categoriesed as top up-for-grabs for new political party.
+
+<br>
+
+```{r}
+#| echo: false
+#| warning: false
+#| label: fn-hyprid-ILV-MoV
+
+indicators |> 
+  #filter(year == "79") |> 
+  select(year, code_fe, MoV_norm, ILV_norm, name) |> 
+  mutate(
+    # --- Step 1: Compute CWI ---
+    CWI = 0.6*(1 - MoV_norm) + 0.4 * ILV_norm,
+    CWI = round(CWI, 3),
+
+    # --- Step 2: Absolute thresholds ---
+    abs_cat = case_when(
+      CWI >= 0.75 ~ "A",
+      CWI >= 0.50 ~ "B",
+      CWI >= 0.25 ~ "C",
+      CWI < 0.25 ~ "D"
+    ),
+    # --- Step 3: Percentile rank category ---
+    pct_rank = percent_rank(CWI),
+    pct_cat = case_when(
+      pct_rank >= 0.75 ~ "A",
+      pct_rank >= 0.50 ~ "B",
+      pct_rank >= 0.25 ~ "C",
+      pct_rank < 0.25 ~ "D"
+    )
+  ) |> 
+  # --- Step 4: Hybrid adjustment ---
+  group_by(year) |> 
+  mutate(
+    # Count A wards in absolute categorisation
+    num_A = sum(abs_cat == "A"),
+    pct_A = sum(pct_cat == "A"),
+    compare = 0.10*pct_A > num_A,
+    # If no A from abs_cat, promote top 10% (pct_rank >= 0.90)
+    hybrid_cat = case_when(
+      compare == T & pct_rank >= 0.90 ~ "A",
+     # num_A == 0                   ~ pct_cat,    # fallback to percentile category
+      TRUE                         ~ abs_cat     # default absolute category
+    )
+  ) |> 
+  ungroup() |> 
+  select(-num_A, -pct_A, -compare) -> hybrid
+
+
+
+
+```
+
+::::: grid
+::: g-col-6
+```{r}
+#| echo: false
+#| warning: false
+#| label: fig-hybrid-list
+#| fig-cap: Clusters of Wards based on absolute value of winnability index 
+#| fig-height: 7
+
+
+hybrid |> 
+  filter(year == "79") |> 
+  ggplot(
+    aes(
+      x = name,
+      y = CWI,
+      fill = hybrid_cat
+    )
+  ) +
+  geom_col() +
+  labs(
+    x = "",
+    y = "",
+    title = "Wards by categories of absolute values of composite indicator of ILV and MoV",
+    fill = ""
+  ) +
+  coord_flip() +
+  theme_minimal() +
+  theme(
+    plot.background = element_rect(),
+    plot.title = element_text(
+      hjust = 0.5,
+      size = 11,
+      face = "bold"
+    )
+  )
+
+
+
+
+```
+:::
+
+::: g-col-6
+```{r}
+#| echo: false
+#| warning: false
+#| label: fig-map-cwi
+#| fig-height: 7
+#| fig-cap: Cluster (absolute) of wards based on composite Index of ILV and MoV 
+
+map |> 
+  left_join(
+    hybrid |> 
+      filter(year == "79") |> 
+      select(code_fe, hybrid_cat), by = "code_fe"
+  ) |> 
+    ggplot() +
+      geom_sf(
+        aes(fill = hybrid_cat)
+        ) +
+      scale_fill_viridis_d(
+        option = "plasma"
+        ) +
+      theme_void() +
+      labs(
+        title = "Clusters - Combined ILV and MoV",
+        fill = " "
+      ) +
+    theme(
+      legend.position = "right",
+      plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+      plot.subtitle = element_text(size = 12, hjust = 0.5),
+      plot.background = element_rect()
+    )
+
+
+
+```
+:::
+:::::
+
+**Priority list of wards based on composite Index of ILV and MoV**
+
+Follwing charts (@fig-priority-hybrid and @tbl-priority-cluster-cwi) provides priority categories of wards based on Winnability Index. The four categories are based on the rank of the index computed and therefore it has equal number of wards in each categories.
+
+<br>
+
+::::: grid
+::: g-col-6
+```{r}
+#| echo: false
+#| warning: false
+#| label: fig-priority-hybrid
+#| fig-height: 7
+#| fig-cap: Priority cluster of wards based on composite index of ILV and MoV
+
+
+map |> 
+  left_join(hybrid, by = "code_fe"
+  ) |> 
+  ggplot() +
+  geom_sf(aes(fill = pct_cat), color = NA) +
+  scale_fill_viridis_d(option = "E") +
+  labs(
+    title = "Ward-Level CWI Priority Map",
+    fill = ""
+  ) +
+  theme_void() +
+  theme(
+      legend.position = "right",
+      plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+      plot.subtitle = element_text(size = 12, hjust = 0.5),
+      plot.background = element_rect()
+    )
+
+
+
+
+```
+:::
+
+::: g-col-6
+```{r}
+#| echo: false
+#| warning: false
+#| label: tbl-priority-cluster-cwi
+#| fig-height: 7
+#| tbl-cap: Priority Category based on combined index of ILV and MoV
+
+hybrid |> 
+  group_by(pct_cat) |> 
+  summarise(
+    wards = str_c(name, sep = ",", collapse = ", "), .groups = "drop"
+  ) |> 
+  mutate(Category = paste("Priority- ", pct_cat, sep = ""), .before = 1) |> 
+  select(-pct_cat) |> 
+  gt() |> 
+  opt_table_lines()
+
+
+
+```
+:::
+:::::
+
+------------------------------------------------------------------------
+
+## Ward-Level KPI Table: ILV, MoV & Composite Indicator
+
+This table provides a ward-by-ward summary of electoral dynamics.
+
+```{r}
+#| echo: false
+#| warning: false
+
+voter |> 
+  count(code_fe, name = "total") |> 
+  mutate(vote_share = total/sum(total)*100) |> 
+  select(-total) -> vote.to.join
+
+ward.level |> 
+  filter(year == "79") |> 
+  # filter(post  "दलित महिला सदस्य") |> 
+  group_by(code_fe, post) |> 
+  mutate(vote_share_nc = vote/sum(vote)*100) |> 
+  ungroup() |> 
+  filter(party == "नेपाली काँग्रेस") |> 
+  select(code_fe, vote, vote_share_nc, post) -> nc_vote_share
+
+
+nc_vote_share |> 
+  group_by(code_fe) |>
+  mutate(
+    vote_share = coalesce(
+      vote_share_nc[post == "दलित महिला सदस्य"][1],
+      vote_share_nc[post == "महिला सदस्य"][1],
+      vote_share_nc[post == "वडा अध्यक्ष"][1]
+    )
+  ) |> 
+  mutate(
+    vote_number = coalesce(
+      vote[post == "दलित महिला सदस्य"][1],
+      vote[post == "महिला सदस्य"][1],
+      vote[post == "वडा सदस्य"][1])
+  ) -> nc_vote_share
+
+ 
+
+
+  vote.to.join |> 
+    left_join(
+      nc_vote_share |> 
+        select(code_fe, vote_share, vote_number) |> rename("nc_vote_share" = "vote_share")
+        |> unique(), by = "code_fe"
+    ) |> 
+    left_join(
+      ward_party_totals |> 
+        filter(year == "79") |> 
+        group_by(code_fe) |> 
+        filter(totalVote_party == max(totalVote_party)) |> 
+        select(code_fe, party) |> rename("dominant_party" = "party"), by = "code_fe"
+    ) -> vote.to.join
+
+
+# 1. Logic Flip & Highlighting
+table_data <- indicators |> 
+  filter(year == "79") |> 
+  left_join(vote.to.join, by = "code_fe") |> 
+  mutate(
+    # Flipping Priority: A becomes D (Stronghold), D becomes A (Target)
+    nc_priority = case_when(
+      percent_cat == "A" ~ "D: Expansion Target",
+      percent_cat == "B" ~ "C: Lean Opportunity",
+      percent_cat == "C" ~ "B: Lean Stronghold",
+      percent_cat == "D" ~ "A: Core Stronghold",
+      .default = percent_cat
+    ),
+    # Identify "Anomalies": NC is dominant but Index is low (Fragile Strongholds)
+    status_alert = ifelse(dominant_party == "नेपाली काँग्रेस" & WOI_weight < median(WOI_weight, na.rm=T), 
+                          "⚠️ High Risk", "Stable")
+  ) |> 
+  arrange(nc_priority) # Sort by new NC priority
+
+# 2. The Final Aesthetic GT Table
+table_data |> 
+  select(name, dominant_party, ENP_raw, ward_MoV_raw, ILV_raw, 
+         WOI_weight, nc_priority, vote_share, nc_vote_share, vote_number) |> 
+  gt() |> 
+  tab_header(
+    title  = md("**NC Strategic Ward Management**"),
+    subtitle = "Reversed Priority: Core Strongholds (A) vs. Expansion Targets (D)"
+  ) |> 
+  
+  # A. Number Formatting
+  fmt_number(columns = c(ENP_raw, ward_MoV_raw, ILV_raw, WOI_weight), decimals = 2) |>
+  fmt_number(columns = vote_number, decimals = 0) |>
+  fmt_percent(columns = c(vote_share, nc_vote_share), scale_values = FALSE, decimals = 2) |>
+
+  # B. Conditional Color Palette for NC Strongholds
+  tab_style(
+    style = list(cell_fill(color = "#1A5276"), cell_text(color = "white", weight = "bold")),
+    locations = cells_body(rows = nc_priority == "A: Core Stronghold")
+  ) |> 
+  tab_style(
+    style = list(cell_fill(color = "#AED6F1")),
+    locations = cells_body(rows = nc_priority == "B: Lean Stronghold")
+  ) |> 
+  
+  # C. Highlight the "Fragile" NC Wards (The "Anomaly" you asked for)
+  # tab_style(
+  #   style = list(cell_text(color = "red", weight = "bold")),
+  #   locations = cells_body(columns = status_alert, rows = status_alert == "⚠️ High Risk")
+  # ) |> 
+  
+  # D. High-Contrast Opportunity Heatmap
+  data_color(
+    columns = WOI_weight,
+    palette = "viridis", # Different palette to distinguish from previous version
+    alpha = 0.8,
+    autocolor_text = TRUE
+  ) |> 
+
+  cols_label(
+    name = "Ward", 
+    dominant_party = "Current Dominant",
+    nc_priority = "NC Priority Class",
+    WOI_weight = "Risk Index",
+    vote_number = "NC Total Votes",
+    ENP_raw = "ENP",
+    ward_MoV_raw = "MoV",
+    ILV_raw = "ILV",
+    vote_share = "Total Voters",
+    nc_vote_share = "NC vote %"
+  ) |> 
+  opt_table_lines() |>
+  tab_options(
+    column_labels.background.color = "#154360",
+    table.font.size = px(12)
+  )
+
+
+  
+
+
+```
+
+```{r}
+#| echo: false
+#| warning: false
+
+
+final_nc_dashboard <- indicators |> 
+  filter(year == "79") |> 
+  left_join(vote.to.join, by = "code_fe") |> 
+  mutate(
+    # 1. Critical Calculations
+    opp_total_share = vote_share - nc_vote_share,
+    is_nc = ifelse(dominant_party == "नेपाली काँग्रेस", TRUE, FALSE),
+    
+    # 2. Safety Margin (Lead minus Volatility)
+    # A negative safety margin means the 'swing' is bigger than your lead.
+    safety_margin = ward_MoV_raw - ILV_raw,
+    
+    # 3. The Voter Gap (Target for ground teams)
+    voter_gap = ifelse(is_nc & safety_margin < 0, 
+                       round((abs(safety_margin)/100) * (vote_number / (nc_vote_share/100))), 
+                       0),
+    
+    # 4. Critical Logic Labels
+    nc_status = case_when(
+      !is_nc & WOI_weight > 60 ~ "OFFENSE: Capture Target",
+      is_nc & safety_margin < 0 ~ "CRITICAL: Under-threat",
+      is_nc & opp_total_share > nc_vote_share ~ "WARNING: Split Vote Risk",
+      is_nc ~ "STABLE: Stronghold",
+      TRUE ~ "Observe"
+    )
+  ) |> 
+  arrange(desc(voter_gap), safety_margin)
+
+final_nc_dashboard |> 
+  select(name, dominant_party, nc_status, safety_margin, voter_gap, 
+         nc_vote_share, ENP_raw, vote_number) |> 
+  gt() |> 
+  tab_header(
+    title = md("**2026 Election: NC Strategic Defense Dashboard**"),
+    subtitle = "Prioritizing Voter Retention and Fragile Strongholds"
+  ) |> 
+  
+  # 1. Formatting
+  fmt_number(columns = c(safety_margin, ENP_raw), decimals = 2) |> 
+  fmt_number(columns = c(voter_gap, vote_number), decimals = 0) |> 
+  fmt_percent(columns = nc_vote_share, scale_values = FALSE, decimals = 1) |> 
+  
+  # 2. Aesthetics: Row Highlighting for Status
+  tab_style(
+    style = list(cell_fill(color = "#F9EBEA"), cell_text(color = "#943126", weight = "bold")),
+    locations = cells_body(rows = nc_status == "CRITICAL: Under-threat")
+  ) |> 
+  tab_style(
+    style = list(cell_fill(color = "#FEF9E7")),
+    locations = cells_body(rows = nc_status == "WARNING: Split Vote Risk")
+  ) |> 
+  
+  # 3. The "Voter Gap" Heatmap (The Target)
+  data_color(
+    columns = voter_gap,
+    palette = "Reds",
+    domain = c(1, max(final_nc_dashboard$voter_gap))
+  ) |> 
+  
+  # 4. Safety Margin Indicators
+  data_color(
+    columns = safety_margin,
+    palette = "RdYlGn",
+    domain = c(-15, 15)
+  ) |> 
+
+  # Labels & Styling
+  cols_label(
+    name = "Ward",
+    dominant_party = "Current Lead",
+    nc_status = "Action Status",
+    safety_margin = "Safety Margin %",
+    voter_gap = "Votes to Secure",
+    nc_vote_share = "NC Share",
+    vote_number = "Base Votes"
+  ) |> 
+  tab_options(
+    column_labels.background.color = "#1B4F72", # NC Dark Blue
+    column_labels.font.size = px(13),
+    heading.title.font.size = px(22),
+    table.width = pct(100)
+  ) |> 
+  tab_source_note(md("**Safety Margin:** Lead % minus Volatility %. **Votes to Secure:** Ground-team target to reach statistical safety.")) |> 
+  opt_table_outline()
+
+
+```
+
+------------------------------------------------------------------------

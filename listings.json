@@ -3,6 +3,7 @@
     "listing": "/blogs.html",
     "items": [
       "/posts/education-teacher-student-ratio/teacherstudentrati.html",
+      "/posts/procurement-supplier-concentration/procurement_concentration.html",
       "/posts/public-health/post1.html"
     ]
   },
@@ -13,21 +14,31 @@
     ]
   },
   {
+    "listing": "/posts/procurement-supplier-concentration/procurement_concentration.html",
+    "items": [
+      "/posts/education-teacher-student-ratio/teacherstudentrati.html",
+      "/posts/public-health/post1.html"
+    ]
+  },
+  {
     "listing": "/posts/education-teacher-student-ratio/teacherstudentrati.html",
     "items": [
+      "/posts/procurement-supplier-concentration/procurement_concentration.html",
       "/posts/public-health/post1.html"
     ]
   },
   {
     "listing": "/posts/public-health/post1.html",
     "items": [
-      "/posts/education-teacher-student-ratio/teacherstudentrati.html"
+      "/posts/education-teacher-student-ratio/teacherstudentrati.html",
+      "/posts/procurement-supplier-concentration/procurement_concentration.html"
     ]
   },
   {
     "listing": "/index.html",
     "items": [
       "/posts/education-teacher-student-ratio/teacherstudentrati.html",
+      "/posts/procurement-supplier-concentration/procurement_concentration.html",
       "/posts/public-health/post1.html"
     ]
   }
