@@ -1,0 +1,27 @@
+<style>
+    /* Prevent Text Selection */
+    body {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+  
+    /* Prevent Printing */
+    @media print {
+      body { visibility: hidden; }
+      .no-print-msg { visibility: visible; position: absolute; top: 0; left: 0; }
+    }
+  </style>
+  
+  <script>
+    // Disable Right Click
+    document.addEventListener('contextmenu', event => event.preventDefault());
+    
+    // Disable F12 (Dev Tools) and Ctrl+Shift+I
+    document.onkeydown = function(e) {
+      if(e.keyCode == 123 || (e.ctrlKey && e.shiftKey && e.keyCode == 73)) {
+        return false;
+      }
+    }
+  </script>
