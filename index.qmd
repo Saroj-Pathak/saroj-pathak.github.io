@@ -4,7 +4,7 @@ listing:
   - id: posts-home
     contents: "posts/**/*.qmd"
     type: grid
-    max-items: 4
+    max-items: 6
     sort: "date desc"
     fields: [image, title, description, date]
 ---
