@@ -1,0 +1,1429 @@
+---
+title: "Brief study on status of sugarcane farming and its impact on production of sugar in Nepal"
+format:
+  html:
+    toc: true
+    bread-crumbs: true
+    toc-location: right
+    toc-title: "In this Article"
+    code-fold: true
+    code-summary: "Show code"
+    page-layout: article
+    fontsize: 19px
+    mainfont: "Gill Sans"
+    css: /styles.css
+    tbl-cap-location: bottom
+    grid:
+      body-width: 1100px     
+      sidebar-width: 250px
+      margin-width: 250px
+      gutter-width: 1.5rem
+execute:
+  echo: false
+  warning: false
+  message: false
+  cache: false
+knitr:
+    opts_chunk: 
+      dev: "ragg_png"
+categories: [Sugarcane, Sugar, Subsidies, Trade]
+title-block-banner: "#efeff8cc" 
+title-block-banner-color: "#002147" 
+image: "image/cover.png"
+---
+
+Refined sugar remains one of the major component of daily life. Nepal has been importing large amount of sugar (mostly from India) to sustain its increasing domestic demand. Nepal's disproportionate reliance on Indian sugar has caused to be a matter of crisis at times when Indian Government decides to put a ban on export of sugar.
+
+Sugarcane is one top cash crops farmed in Nepal and is at the heart of domestic production of sugar. An increase in efficient production of sugarcane could potentially decrease Nepal's dependency on refined sugar from India. This study makes an effort to make use of data made available by Government of Nepal such as yearly agricultural statistics[^1] and others to make an assessment on status of Sugarcane farming and production of sugar in Nepal.
+
+[^1]: Data on sugarcane (and cash crops) used in this report is curated from annual agricultural statistics published by the Ministry of Agriculture and Livestock Development. Available at <https://moald.gov.np/publication-types/agriculture-statistics/>.
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| output: false
+
+options(scipen=999)
+
+library(tidyverse)
+library(ggplot2)
+library(kableExtra)
+library(sf)
+library(ggthemes)
+library(echarts4r)
+library(RColorBrewer)
+library(janitor)
+library(gt)
+library(googlesheets4)
+library(viridis)
+library(ggtext)
+
+
+
+theme_set(theme_minimal(base_size = 34, base_family = "Gill Sans"))
+
+
+load("data/sugar_tidy.RData")
+
+
+
+
+
+
+agstat |> 
+  filter(FYy == "2020/21") |>
+  filter(crop == "sugarcane") |> 
+  #spread(variable, value) |> 
+  #View()
+  select(1, value, var) |> 
+  spread(var, value) |> 
+  arrange(desc(prod)) |> 
+  slice(1:10) |> 
+  select(1,4) |>
+  (\(x) rename(x, "Place" = colnames(x)[1]))() |> 
+  mutate(country = "Nepal",
+         rate = 544.33) -> top_nepal_yield
+
+
+sugar_india |> 
+  filter(`States/UT` %in% c("West Bengal", "Uttar Pradesh",
+                            "Bihar", "Uttarakhand", 
+                           "neighbor", "not neighbor")) |> 
+  filter(fy == "2020/21") |> 
+  select(1,5) |> 
+  (\(x) rename(x, "Place" = colnames(x)[1]))() |> 
+  mutate(country = "India",
+         rate = 456) -> india_yield
+
+compare_yield <- rbind(top_nepal_yield, india_yield)
+
+
+
+```
+
+# Making sense of data from Annual Agricultural Statistics
+
+::: {layout="[[55,-1,44]]"}
+```{r}
+#| echo: false
+#| label: fig-plot-area
+#| fig-cap: Total area (in hectare) of farming of cash crops (including sugarcane) from 1990 onwards  
+#| fig-height: 7
+
+
+
+cash_crops |> 
+  select(-2) |> 
+  #mutate(Year = as.factor(Year)) |> 
+  filter(var == "area") |> 
+  group_by(Year) |> 
+  mutate(total = sum(value)) |> 
+  ungroup() |> 
+  left_join(fy |> 
+              select(2,3) |> 
+              rename("Year" = "FY"),
+            by = "Year" ) |> 
+  select(2:6) |> 
+  rename("Year" = "fyn") |> 
+  
+  spread(crop, value) |> 
+  distinct() |> 
+  ggplot(aes(x = Year, y = total, group = 1)) +
+  geom_point(color = "maroon") +
+  #geom_text(aes(label = round(total/1000,0))) +
+  geom_line(linetype =4,
+            color = "maroon") +
+  
+  geom_point(aes(x = Year, y = sugarcane),
+             color = "darkblue") +
+  geom_line( aes(x = Year, y = sugarcane),
+             linetype = 4,
+             color = "darkblue") -> p
+
+p +
+  theme_economist()+
+  labs( y = "Area (in hectare)",
+    x = "FY",
+    title = "<b style='color:#800000; font-size: 18px'> Total Area of cultivation of cash crops </b><b style='font-size: 16px; color: #006400'>and</b><b style='color:#00008B; font-size: 18px'> area of sugarcane cultivation </b>"
+  ) +
+   theme(axis.text.x = element_text(angle = 90, vjust = 0.4,
+                                    hjust=1),
+        plot.title = element_markdown(hjust = 1,
+                                      family = "Gill Sans",
+                                      margin=margin(0,0,30,0)
+                                      )
+
+        ) +
+  annotate("curve", x = 24, xend = "74-75" , y = 350000, yend = 472284,
+           colour = "darkgreen", linewidth = 0.6, arrow = arrow()) +
+  annotate("text", x = 22, 
+           y = 340000, 
+           size = 2.5,
+           label = paste("in fy 2074-75 there", " \n was significant dip", "\n in the total cultivation", "\n area of cash crops"),
+           color = "darkgreen") +
+  annotate( "curve", x = 27, xend = "75-76" , y = 200000, yend = 78609,
+           colour = "darkgreen", linewidth = 0.6, arrow = arrow()) +
+  annotate("text", x = 28,
+           y = 250000,
+           size = 2.5,
+           label = paste("there is a consistent", "\n downward trend", 
+                         "\n total area of cultivation", "\n for sugarcane after 2075-76"),
+           color = "darkgreen") 
+  
+  
+  
+  
+  
+  
+
+```
+
+@fig-plot-area provides total area of cultivation (in hectare) of cash crops in Nepal. Apart from few anomalies such as during the FY 2074-75 there exists a general upward trend in total area of cultivation of cash crops in Nepal. The total area for cultivation of cash crops peaked during FY 2076-77 when total of **533311** hectare of land were used.\
+\
+The curve (in darkblue) representing the total area of cultivation of sugarcane also suggests that there has been a general upward trend and in line with the trend of the curve representing total area of cultivation (in maroon); the big exception to this looks to have happened after the FY 2075-76. There is a significant downward trend in total area of cultivation of sugarcane after 2075-76\
+\
+@tbl-sugar-downward below provides total area in which the sugarcane is being cultivated in last five FY. The table shows a diminishing rate at which sugarcane is being cultivated in Nepal.\
+\
+@fig-plot-cashcrop provides visual representation of the area and production of various cash crops. The values in area is in 1000s (hectare) and the production is in metricton.
+:::
+
+::: {layout="[[25,-1,74]]"}
+```{r}
+#| echo: false
+#| label: tbl-sugar-downward
+#| tbl-cap: Total area of cultivation of sugarcane in last 5 FY
+#| tbl-cap-location: bottom
+
+cash_crops |> 
+  select(-2) |> 
+  #mutate(Year = as.factor(Year)) |> 
+  filter(var == "area") |> 
+   left_join(fy |> 
+              select(2,3) |> 
+              rename("Year" = "FY"),
+            by = "Year" ) |> 
+  select(2:5) |> 
+  rename("Year" = "fyn") |> 
+  group_by(Year) |> 
+  mutate(total = sum(value)) |> 
+
+  ungroup() |> 
+  spread(crop, value) |> 
+  distinct() |> 
+
+  select(-var) |> 
+
+  slice(28:32) |> 
+  rename("Area (in hectare)" = "sugarcane") |> 
+  mutate(sn = row_number(),
+         .before = 1) |> 
+  select(1,2,8) |> 
+
+  gt() |> 
+   tab_header(
+        title = "Total area of sugarcane farming in Nepal",
+        subtitle = "(values in hectare)"
+      ) |> 
+      opt_table_lines() |> 
+      tab_options(column_labels.background.color = "blue")
+  
+
+```
+
+```{r}
+#| echo: false
+#| label: fig-plot-cashcrop
+#| fig-cap-location: top
+#| fig-cap: Total area (in 1000s hectare) and production (in metric ton) of sugarcane in Nepal
+
+cash_crops |> 
+  select(-2) |> 
+  mutate(Year = as.factor(Year)) |> 
+  filter(crop == "sugarcane") |> 
+  select(-crop) |> 
+  left_join(fy |> 
+              select(2,3) |> 
+              rename("Year" = "FY"),
+            by = "Year" ) |> 
+  select(2:4) |> 
+  rename("Year" = "fyn") |>
+  mutate(Year = as.factor(Year)) |> 
+  spread(var, value) |>
+  mutate(area = round(area/1000, 1)) |> 
+  e_charts(Year, timeline = FALSE) |> 
+  e_line (area) |> 
+  e_legend(show = TRUE) |> 
+  e_labels(size =0.2) |> 
+  #e_tooltip() |>
+  e_bar (prod, y_index = 1) |> 
+  e_legend(show = TRUE) |> 
+  e_tooltip() |> 
+  e_x_axis(axisLabel = list(interval = 0, rotate = 45))
+  
+
+```
+:::
+
+## Lets look into district level data on Sugarcane in Nepal
+
+::: {layout="[[35,-1,64]]"}
+```{r}
+#| echo: false
+#| label: tbl-sugarcane-area
+#| tbl-cap: Total area of cultivation of sugarcane in last in each district
+#| tbl-cap-location: bottom
+
+agstat |> 
+  filter(crop == "sugarcane") |> 
+
+
+  filter(var == "area") |> 
+  
+  mutate(value = ifelse(DISTRICT == "NAWALPARASI EAST" & 
+                         FY %in% c("71-72", "72-73", "73-74", "74-75"), 
+                       0, value )) |> 
+  select(1,2,5) |> 
+
+  spread(FY, value) |> 
+  adorn_totals(where = "col") |> 
+  arrange(desc(Total)) |> 
+  mutate(Total = round(Total/8, 1)) |> 
+  mutate(sn = row_number(),
+         .before = 1) |> 
+  slice(1:20) |> 
+  select(-Total) |> 
+  #filter(Total>1000) |> 
+  gt() |> 
+  tab_header(
+    title = "Data listing total area of sugarcane farming in top 20 districts",
+    subtitle = "(values are in hectare)"
+  ) |> 
+   
+  opt_table_lines() |> 
+  tab_options(column_labels.background.color = "blue") |> 
+  data_color(
+    columns = c(3:10),
+    fn = scales::col_numeric(
+      palette = c("white", "lightblue", "#1E90FF",  "#4169E1"
+        ),
+      domain = NULL)
+  )
+
+
+```
+
+```{r}
+#| echo: false
+#| label: tbl-sugarcane-production
+#| tbl-cap: Total production sugarcane in eash District
+#| tbl-cap-location: bottom
+
+
+agstat |> 
+  filter(crop == "sugarcane") |> 
+  filter(var == "prod") |> 
+  mutate(value = ifelse(DISTRICT == "NAWALPARASI EAST" & 
+                         FY %in% c("71-72", "72-73", "73-74", "74-75"), 
+                       0, value )) |> 
+  select(1,2,5) |> 
+  group_by(DISTRICT) |> 
+  ungroup() |>
+  mutate(value = round(value/1000,0)) |>
+  spread(FY, value) |> 
+  arrange(desc(`78-79`)) |> 
+  mutate(sn = row_number(),
+         .before = 1) |> 
+  slice(1:20) |> 
+  #filter(Total>1000) |> 
+  gt() |> 
+  tab_header(
+    title = "Data listing total production of sugarcane in top 20 districts ",
+    subtitle = "(values are in kiloton)"
+  ) |> 
+  
+  opt_table_lines() |> 
+  tab_options(column_labels.background.color = "blue") |> 
+  data_color(
+    columns = c(3:10),
+    fn = scales::col_numeric(
+      palette = c("white", "lightblue", "#1E90FF",  "#4169E1"
+        ),
+      domain = NULL)
+  )
+
+
+
+```
+:::
+
+### Observation 1.0
+
+Observations based on the above table:
+
+1.  There is a general downward trends in sugarcane cultivation in Nepal. Few noteworthy instances are as follow:
+
+    -   Sarlahi and Rautahat are two of the top districts which cultivates sugarcane in Nepal. In the FY 2071-72 the total area of sugarcane cultivation in Sarlahi was 22,500 hectare which was reduced to 15,673 hectare in FY 2078-79; that is a reduction of **30.3%**. It is to be noted that in the FY 2072-73 the total area of cultivation of sugarcane in Sarlahi peaked at 27,000 hectare.\
+        \
+        Similar is the case of Rautahat which had its peak of cultivation area in FY 2071-72 at 10,075 hectare which is reduced to 6,942 hectare in FY 2078-79.\
+
+    -   There is significant reduction in cultivation area in other important district such as Mahottari, Kapilbastu and Nawalparasi (West & East).
+
+    -   The reduction in area of cultivation in Dang district from 2200 hectare in 2071-72 to 0 in 2078-79 is startling.
+
+2.  Few Glimpses of Hope
+
+    -   Kanchanpur district presents interesting trend; for the FY 2075-76 & 2076-77 there was a surge of sugarcane cultivation where the area of cultivation increased by almost 50%. If we are to compare the yield rate, Kanchanpur has a competitive yield rate in comparison to district such as Rautahat.\
+
+    -   Bara saw a surge in the cultivation of sugarcane in the FY 2078-79
+
+## The best case scenario !
+
+As illustrated in @tbl-sugarcane-area there is significant variance in amount of land used to cultivate sugarcane. This suggests that there is presumably relative ease in switching crops (most likely among cash crops) in the available land. The table below @tbl-sugarcane-hypothetical presents hypothetical scenario in which the maximum area where sugarcane were cultivated in last eight FY in each District is taken along with maximum yield to project a production.\
+
+Such scenario where the best performance (in terms of top yield rate and area of cultivation) could be replicated (through efforts from all sector) the production of sugarcane could be increased significantly. It is to be noted that the values taken to compute such increased production are taken from the best performance of each district in last 8 years. The computation suggests the following:
+
+1.  There would be 27 districts which would have cultivation area of sugarcane in excess of 100 hectare;
+2.  The total area of production would increase to 95,744 hectares across these such 27 district (the highest total cultivation area across the country in the most recent time was in 2073-74 where total of \~ 81,009 hectare of land was used for sugarcane cultivation)
+3.  Together with the top yield rate at each of these 27 districts in last 8 years would in combine produce total of 5,339,261 metric ton of sugarcane. Nepal has seen the highest production of sugarcane in the FY 2073-74 where \~ 4,350,000 metric ton of sugarcane was produced. That is an increase of **18 %** just from 27 districts.
+
+::: {layout="[[50,-1,50]]"}
+```{r}
+#| echo: false
+#| label: tbl-sugarcane-hypothetical
+#| tbl-cap: Table presenting best case scenario (top area & yeild in last 8 FY)
+#| tbl-cap-location: bottom
+
+agstat |> 
+  filter(crop == "sugarcane") |> 
+  select(1,2, 5, 7) |> 
+  spread(var, value) |> 
+  mutate(area = ifelse(DISTRICT == "NAWALPARASI EAST" & 
+                         FY %in% c("71-72", "72-73", "73-74", "74-75"), 
+                       0, area ),
+         prod = ifelse(DISTRICT == "NAWALPARASI EAST" & 
+                         FY %in% c("71-72", "72-73", "73-74", "74-75"), 
+                       0, prod )
+         ) |> 
+  mutate(yield_n = round(prod/area,2)) |> 
+  select(1:4,6) |> 
+  rename("yield" = "yield_n") |> 
+  pivot_longer(
+    cols = 3:5,
+    names_to = "var",
+    values_to = "value"
+  ) |> 
+  group_by(DISTRICT) |> 
+  mutate(max_area = max(value[var == "area"], na.rm = TRUE)) |> 
+  filter(!max_area < 1) |> 
+  mutate(max_yield = max(value[var == "yield"], na.rm =TRUE ),
+         mean_yield = round(
+           mean(value[var == "yield"], na.rm = TRUE),2
+           )) |> 
+  ungroup() |> 
+  select(1,5,6,7) |> 
+  distinct() |> 
+  #filter(max_area > 100) |> 
+  mutate(production = max_area * max_yield ) |> 
+  arrange(desc(production)) -> best_agstat
+
+
+best_agstat |> 
+  select(1:3, 5) |> 
+  filter(max_area >100) |> 
+  mutate(sn = row_number(),
+         .before = 1) |> 
+  as.data.frame() |> 
+  gt() |> 
+  tab_header(
+    title = "Data listing scenario where top values of yield and area is taken from each district",
+    subtitle = "(area in hectare, yield in ton per hectare and production in ton)"
+  ) |> 
+  opt_table_lines() |> 
+  tab_options(column_labels.background.color = "blue") |> 
+  data_color(
+    columns = c( 3, 4, 5),
+    fn = scales::col_numeric(
+      palette = c("white", "lightblue", "#1E90FF",  "#4169E1"
+        ),
+      domain = NULL)
+  )
+
+
+
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| label: fig-hypothetical
+#| fig-cap-location: top
+#| fig-cap: District-wise cholorpath map of Nepal with top values of Yield and area of cultivation of sugarcane in Nepal
+#| fig-subcap: 
+#| - District wise map of Nepal with maximum yield rate in each district in last eight FY 
+#| - District wise map of Nepal with maximum area of cultivation of sugarcane in each district in last eight FY
+
+
+map |> 
+  st_as_sf() |> 
+  left_join(best_agstat |> 
+              filter(max_area > 100), by = "DISTRICT") |> 
+
+  ggplot()+
+  geom_sf(aes(fill = max_yield), colour = "white")+
+
+  scale_fill_viridis_c(option = "C",
+                       na.value = "darkgrey",
+                       aesthetics = "fill") +
+  theme(
+    text = element_text(color = "#666666"),
+    # remove all axes
+    axis.line = element_blank(),
+    axis.text.x = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks = element_blank(),
+    # add a subtle grid
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    # background colors
+    plot.background = element_rect(fill = "#F1EAEA",
+                                   color = NA),
+    panel.background = element_rect(fill = "#F1EAEA",
+                                    color = NA),
+    legend.background = element_rect(fill = "#F1EAEA",
+                                     color = NA),
+ 
+    legend.title = element_text(size = 11),
+    legend.text = element_text(size = 9, hjust = -5,
+                               color = "#666666"),
+    plot.title = element_text(size = 15, hjust = -1,
+                              family = "Gill Sans",
+                              color = "black"),
+
+    # captions
+    plot.caption = element_text(size = 7,
+                                hjust = .5,
+                                margin = margin(t = 0.2,
+                                                b = 0,
+                                                unit = "cm"),
+                                color = "#939184")) +
+  
+  labs(
+    x = NULL,
+    y = NULL,
+    title = "Maximum yield rate of sugarcane in each district in last eight fiscal year"
+  )
+
+
+
+
+map |> 
+  st_as_sf() |> 
+  left_join(best_agstat |> 
+              filter(max_area > 100), by = "DISTRICT") |> 
+
+  ggplot()+
+  geom_sf(aes(fill = max_area), colour = "white")+
+
+  scale_fill_viridis_c(option = "C",
+                       na.value = "darkgrey",
+                       aesthetics = "fill") +
+  labs(
+    x = NULL,
+    y = NULL,
+    title = "Maximum Area where sugarcane is farmed in each district in last eight FY",
+  ) +
+   theme(
+    text = element_text(color = "#666666"),
+    # remove all axes
+    axis.line = element_blank(),
+    axis.text.x = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks = element_blank(),
+    # add a subtle grid
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    # background colors
+    plot.background = element_rect(fill = "#F1EAEA",
+                                   color = NA),
+    panel.background = element_rect(fill = "#F1EAEA",
+                                    color = NA),
+    legend.background = element_rect(fill = "#F1EAEA",
+                                     color = NA),
+ 
+    legend.title = element_text(size = 11),
+    legend.text = element_text(size = 9, hjust = 0,
+                               color = "#666666"),
+    plot.title = element_text(size = 15, hjust = -1,
+                              family = "Gill Sans",
+                              color = "black"),
+  
+    # captions
+    plot.caption = element_text(size = 7,
+                                hjust = .5,
+                                margin = margin(t = 0.2,
+                                                b = 0,
+                                                unit = "cm"),
+                                color = "#939184"))
+  
+  
+
+
+```
+:::
+
+### Observation 2.0
+
+::: {layout="[[85,-1,14]]"}
+1.  There is a very low yield rate in Sugarcane in Nepal. The Average yield rate across all district in Nepal in last 8 FY is 35.733 metric ton per hectare. Even if we are to compute the mean yield rate along the highest yield rate among all district in last 8 FY is just 45.64 metric ton per hectare.
+
+2.  The district with high yield rate are not among the top producer (or district where sugarcane is top cultivated cash crop). @tbl-yield-best provides the list of top 10 district with highest yield rate (the maximum yield rate is taken from the top yield rate in each district in last 8 FY). The table clearly illustrates that top two district in terms of production and area of cultivation ie Sarlahi and Rautahat are missing the list of top 10 districts with highest yield.
+
+3.  @tbl-yield-best further reinforces the opportunity **Kanchanpur** possess as a high value district for efficient production of sugarcane in Nepal. Furthermore, the concentration of high yield districts in form of Doti and Bajhang in the same region as Kanchanpur provides a opportunity for concentration of sugar and/or sugarcane industry in the far west province.
+
+4.  Morang has the highest maximum yield rate among all district in Nepal. In FY 2071-72 (2013-14) Morang saw cultivation of Sugarcane in 2,200 hectare of land (which was among top 10 district producing Sugarcane in that FY). It is to be noted that Morang in most recent FY ranked 12th in production of sugarcane (see @tbl-sugarcane-production). This suggests there is a strong case for increase in cultivation and investment of sugarcane in Morang.
+
+5.  Sunsari has the most consistently high yield rate among all districts in Nepal. In terms total share of production of sugarcane Sunsari stands among top 5% of the districts in Nepal. Hence, increased investment in cultivation of sugarcane in Sunsari would be fruitful. Similar, is the case with Kapilbastu district.
+
+```{r}
+#| echo: false
+#| label: tbl-yield-best
+#| tbl-cap: Table with maximum yield rate and mean yield rate for top 10 districts (based on maximum yield rate) in last 8 FY
+
+best_agstat |> 
+  select(1,3,4) |> 
+  arrange(desc(max_yield)) |> 
+  slice(1:10) |> 
+  mutate(sn = row_number(),
+         .before = 1) |> 
+  gt() |> 
+  tab_header(
+    title = "Data listing mean and maximum yield for each distrcit in last eight FY",
+    subtitle = "(values are in ton per hectare)"
+  ) |> 
+  opt_table_lines() |> 
+  tab_options(column_labels.background.color = "blue") |> 
+  data_color(
+    columns = c(3,4),
+    fn = scales::col_numeric(
+      palette = c("white", "lightblue", "#1E90FF",  "#4169E1"
+        ),
+      domain = NULL)
+  )
+
+```
+:::
+
+## In comparison with the Sugarcane related statistics from India
+
+Lets look into the sugarcane related agro-statistics[^2] from India and lets attempt to make a comparison with that of Nepal.
+
+[^2]: Directorate of Sugarcane Development, Ministry of Agriculture & Farmers Welfare, Government of India, as accessed from <https://sugarcane.dac.gov.in/pdf/StatisticsAPY.pdf>.
+
+```{r}
+#| echo: false
+#| label: fig-india-sugarcane
+#| fig-cap: Yield rate of Sugarcane farming in India in various States and UT
+#| fig-width: 12
+#| fig-height: 10
+
+sugar_india |> 
+  pivot_longer(
+    cols = 3:5,
+    names_to = "var",
+    values_to = "value"
+  ) |> 
+  filter(var == "yield") |> 
+  ggplot(aes(x = `States/UT`, y = value, 
+             fill = factor(ifelse(`States/UT` %in% c("West Bengal", "Uttar Pradesh",
+                                              "Bihar", "Uttarakhand"), 
+                           "neighbor", "not neighbor"))
+               )
+         ) +
+          
+  geom_bar(stat = "identity") + #, fill =  "forestgreen" ) +
+  facet_wrap(~fy) +
+  coord_flip() +
+  geom_text(aes(label = value), nudge_y = -12,
+            size = 4,
+            color = "white") +
+  theme_economist() +
+  xlab("") +
+  ylab("tonnes/hectare") +
+  scale_fill_manual(values=c("#ec5300","#374f2f")) +
+  labs(title = "<b style='color: #374f2f; font-size: 20px'>Yield rate of sugarcane in various States/UT in India</b><b style='color: #ec5300; font-size: 20px'> including neighboring states to Nepal </b>") +
+  theme(
+     plot.title = element_markdown(hjust = 0.4,
+                                   family = "Gill Sans",
+                                      margin=margin(0,0,30,0)),
+   
+    legend.position = "none"
+  )
+  
+```
+
+<br>
+
+The @fig-india-sugarcane clearly illustrates that the yield rate of sugarcane farming in India outperforms that in Nepal. Baring Bihar, other Indian states neighboring Nepal also has a impressive yield rate. The @fig-sugarcane-price provides the Fair and Remunerative Price (FRP) of Sugarcane as declared by the Government of India[^3] and Minimum support price (MSP) provided by the Government of Nepal[^4] in various fiscal years.
+
+[^3]: Department of Food and Public Distribution, available at <https://dfpd.gov.in/gen_policy.htm>.
+
+[^4]: The data on MSP is obtained from various sources including government reports such as "Sugarcane Farming in Nepal" available at <https://moald.gov.np/wp-content/uploads/2022/04/Sugarane-Development-in-Nepal.pdf>.
+
+::: {layout="[[44,-1,55]]"}
+The government rates on sugarcane is constantly higher in Nepal in comparison to that of India. For example in the FY 2022-23 \[2080-81\] the rate of sugarcane per quintal in Nepal was set at Nrs. 122 higher than that in India. On a *prima facie* this might suggests that farmers are well off in Nepal in comparison to that in India.\
+\
+A detail comparison of costs (and/or investment) involved in farming sugarcane in India and Nepal is required to make any judgment regarding the value of government set prices of sugarcane. In this analysis lets take in consideration the data such as yield rate to make an attempt to judge farmer welfare.\
+\
+For the purpose of this analysis lets taken data from top 10 sugarcane producing districts of Nepal and 4 neighboring states of India and make an attempt to analyse the return made by farmers based on the prices set by respective governments.
+
+```{r}
+#| echo: false
+#| warning: false
+#| label: fig-sugarcane-price
+#| fig-cap: Figure with prices of sugarcane as declared by government of Nepal and India
+
+price |> 
+  slice(-1) |> 
+  as.data.frame() |>
+  
+
+  
+  (\(x) rename(x, "India" = colnames(x)[3],
+               "recovery_level" = colnames(x)[4],
+               "Nepal" = colnames(x)[5]
+               )) () |> 
+  mutate(India = India*1.6) |> 
+  pivot_longer(
+    cols = c(3,5)
+  ) |> 
+
+
+  ggplot(
+    aes(x = FY,
+        y = value,
+        fill = name )
+  ) +
+  geom_bar(stat = "identity", position = position_dodge(width=0.5)) +
+  geom_text(aes(label = value),
+            position = position_dodge(width = 0.5),
+            hjust = 1,
+            size = 3,
+            color = "white") +
+  scale_fill_manual(values=c("#ec5300","#374f2f")) +
+  coord_flip() +
+  theme_economist() +
+  labs(
+    x = "",
+    y = "Price in Nrs per Quintal",
+    title = "Per Quintal price of Sugarcane as fixed by Governments of<b style='color: #ec5300'> India</b> and <b style='color: #374f2f'>Nepal </B>",
+    subtitle = "Prices in Nepali Currency"
+  ) +
+  theme(
+    legend.position = "none",
+    plot.title = element_markdown(hjust = 0.8,
+                                      margin=margin(0,0,5,0),
+                                  family = "Gill Sans",
+                                  size = 12)
+    
+  )
+
+
+
+```
+:::
+
+::: {layout="[[65,-1,34]]"}
+```{r}
+#| echo: false
+#| warning: false
+#| fig-height: 6
+#| label: fig-earning-farmer
+#| fig-cap: Per hectare revenue for farmers in India and Nepal based on government set prices
+
+compare_yield |> 
+  mutate(income = (yield*10)* rate) |>
+  ggplot(aes(
+    x = Place,
+    y = income,
+    fill = country
+  ))+
+  geom_col() +
+
+  geom_text(aes(label = paste(round(income/100000, 2), "lac")),
+            position = position_dodge(width = 0.5),
+            hjust = 1,
+            size = 3.5,
+            color = "white") +
+  scale_fill_manual(values=c("#ec5300","#374f2f")) +
+  coord_flip() +
+  theme_economist() +
+  labs(
+    x = "",
+    y = "Revenue per hectare",
+    title = "Per hectare Revenue received by farmers in<b style='color: #ec5300'> India</b> and <b style='color: #374f2f'>Nepal </B>",
+    subtitle = "(in Nepali currency)"
+  ) +
+  theme(
+    legend.position = "none",
+    plot.title = element_markdown(
+                                  hjust = 0.8,
+                                  margin=margin(0,0,10,0),
+                                  family = "Gill Sans",
+                                  size = 12),
+    #plot.subtitle = element_text(hjust = 0.4,
+     # family = "Gill Sans"
+      
+      
+    #)
+    
+  )
+
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| label: tbl-income-sugarcane
+#| tbl-cap: Revenue by the farmers per hectare in India and Nepal(in Nepali currency) based on the price rate set by respective governments of Nepal and India
+
+compare_yield |> 
+  mutate(revenue = (yield*10)* rate) |> 
+  select(1,2,5) |>
+  arrange(desc(revenue)) |> 
+  gt() |> 
+   tab_header(
+    title = "Revenue generated by farmers per hectare top districts of Nepal and neighboring Indian States",
+    subtitle = "(for 2020/21[78-79] the rate in India and Nepal were Nrs. 544.33 & 456 (per quintal) respectively)"
+  ) |> 
+  opt_table_lines() |> 
+  tab_options(column_labels.background.color = "blue") |> 
+  data_color(
+    columns = 3,
+    fn = scales::col_numeric(
+      palette = c("white", "lightblue", "#1E90FF",  "#4169E1"
+        ),
+      domain = NULL)
+  )
+  
+
+```
+:::
+
+@tbl-income-sugarcane and @fig-earning-farmer provides evidence that the higher price rate set by government of Nepal for the Sugarcane is not making the farmers well-off because of the lower yield rate in Nepal. It is evident from the @fig-earning-farmer that Indian farmers (Bihar being an exception) make significantly more amount of money from equivalent amount of land in India. Yet again, there is evidence for need of increased effort in farming of sugarcane in Kanchanpur district as it is the most competitive Districts of Nepal compared to States in India in terms of economic well being of farmers. It is to be noted states in India such as Uttar Pradesh have large amount of farmland where sugarcane is cultivate which could be achieving economies of scale. **Higher economies of scale would mean that Indian farmers enjoy higher profit margin from the revenue they generate**.
+
+However, because of significant price disparity (in FY 2020/21) there is a pull factor for illegal trade of sugarcane from neighboring districts of India to Nepal. For example in 2020/21 \[2078-79\], the government set price for sugarcane in Nepal is Nrs. 88.44 more than that in India. The situation is such that any amount of illegally traded sugarcane from India could make a good profit for any rate below Nrs 544 per quintal (and above Nrs 456).
+
+## Cost of production of Sugarcane
+
+# Lets connect dots with data related Sugar mills
+
+Based on the report by the Ministry of Agriculture and Livestock Development[^5] there were 12 sugarmills in operations in 2074-75 which crushed total of 20.69 lakh tonnes of sugarcane and produced 1.78 lakh tonnes of sugar at a recovery rate of **8.61%**. Likewise, in 2075-76 total of 14 sugarmills crushed total of 20.81 lakh tonnes of sugarcane that produced 1.83 lakh tonnes of sugar at a recovery rate of **8.89%**[^6].
+
+[^5]: Sugarcane Farming in Nepal, Ministry of Agriculture and Livestock Development, 2077, available at <https://moald.gov.np/wp-content/uploads/2022/04/Sugarane-Development-in-Nepal.pdf>.
+
+[^6]: The Government report suggests that the recovery rate was 8.22% in FY 2075-76 which most likely has arithmetic error.
+
+::: {layout="[[65,-1,34]]"}
+```{r}
+#| echo: false
+#| warning: false
+#| label: fig-sugarcane-crushed
+#| fig-cap: Total amount of sugarcane crushed in various sugar mills in Nepal in two FY
+#| fig-height: 7
+#| fig-width: 8
+
+recovery |> 
+  ggplot(aes(
+    x = Firm, 
+    y = (Crushing/10)/1000,
+    fill = FY
+  )) +
+  geom_bar(stat = "identity", position = position_dodge(width=1)) +
+  geom_text(aes(label = round((Crushing/10)/1000,2)),
+            position = position_dodge(width = 1),
+            hjust = 1,
+            size = 3,
+            color = "white") +
+  scale_fill_manual(values=c("#ec5300","#374f2f")) +
+  coord_flip() +
+  theme_economist() +
+  labs(
+    x = "",
+    y = "Sugarcane crushed (in kilo ton)",
+    title = "Sugarcane crushed by various sugarmills in Nepal in FY<b style='color: #ec5300'> 2074-75</b> and <b style='color: #374f2f'>2075-76 </B>"
+  ) +
+  theme(
+    legend.position = "none",
+    plot.title = element_markdown(hjust = 1,
+                                      margin=margin(0,0,30,0),
+                                  family = "Gill Sans",
+                                  size = 13),
+                            
+    axis.text.y=element_text(size=8, hjust=1, 
+                             vjust=0.2
+                             )
+    
+  )
+
+
+
+
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| label: fig-sugar-recovery
+#| fig-cap: Recovery of Sugar from sugarcane in Nepal
+#| fig-subcap: 
+#| - Total production of sugarcane in Nepal and total amount of sugarcane recieved by mills for crushing
+#| - Total recoverd sugar and sugarcane crushed in the mills 
+
+
+recovery |> 
+  group_by(FY) |> 
+  summarise(mill = sum(Crushing)/10) |> 
+  ungroup() |> 
+  left_join(
+    agstat |> 
+      filter(crop == "sugarcane") |> 
+      filter(FY %in% c("74-75", "75-76")) |> 
+      filter(var == "prod") |> 
+      group_by(FY) |> 
+      summarise(production = sum(value)) |> 
+      ungroup(),
+    by = "FY"
+  ) |> 
+  pivot_longer(
+    cols = c(2,3)
+  ) -> sugar_status
+
+
+sugar_status |> 
+  ggplot(aes(
+    x = FY,
+    y = value,
+    fill = name
+  ))+
+  geom_col(position = "dodge") +
+  geom_text(aes(label = paste(round((value)/100000,2),"lac")),
+            position = position_dodge(width = 1),
+            hjust = 0.3,
+            vjust = -0.5,
+            size = 3,
+            color = "black") +
+  scale_fill_manual(values=c("#ec5300","#374f2f")) +
+  theme_economist() +
+  labs(
+    x = "Fiscal Year",
+    y = "Sugarcane (in tonnes)",
+    title = "Sugarcane<b style='color: #ec5300'> crushed in various sugarmills</b> and <b style='color: #374f2f'>total production in Nepal </b>"
+  ) +
+  theme(
+    legend.position = "none",
+    plot.title = element_markdown(hjust = 1,
+                                      margin=margin(0,0,30,0),
+                                  family = "Gill Sans",
+                                  size = 13),
+                            
+    axis.text.y=element_text(size=8, hjust=1, 
+                             vjust=0.2
+                             )
+  )
+
+
+recovery |> 
+  group_by(FY) |> 
+  summarise(total = sum(Sugar)) |> 
+  ungroup() |> 
+  ggplot(aes(x=FY, y = round((total/10),2), fill=FY)) +
+  geom_col(
+    color = "black",
+    fill = "forestgreen"
+  ) +
+  geom_text(aes(
+    label = paste(round((total/10)/100000,2), "lac tonnes")),
+    hjust = 0.5,
+    vjust = 10,
+    color = "white"
+    
+  ) +
+  theme_economist() +
+  labs(title = "Total sugar production in various mills of Nepal",
+    y = "Sugar production (in tonnes)"
+  ) +
+  theme(
+    plot.title = element_markdown(
+     
+      hjust = 0.5,
+      family = "Gill Sans",
+      size = 12
+
+    )
+  )
+
+
+```
+:::
+
+## Observation 3.0
+
+1.  **Lower yield rate, lower recovery rate and higher government set price for sugarcane - a recipe for costly sugar production**
+
+    The average recovery rate at sugarmills in India for production of Sugar is approximately 10%[^7]. For the purpose of this report and analysis, the average recovery rate of production of sugar in Nepal is taken at 8.9%. Lets make an attempt to estimate cost of sugarcane as raw material in producing sugar in Nepal and India which could provide explanation to one dimension of sugar industry (sugarmills) in Nepal.
+
+    @tbl-cost-sugar below makes use of the @tbl-income-sugarcane and makes further computation to make an estimation of cost of sugar (per quintal) for sugarmills in India and Nepal. As illustrated in the table below there is a difference of approximately Nrs. 800 (ie \~18%)[^8] per quintal of sugar produced in India and Nepal. If other factors of production of sugar in India and Nepal is set constant, the price of production of sugar in Nepal will remain higher by at least 25% because of lower yield rate and recovery rate along with higher government rates on procurement of sugarcane.
+
+[^7]: USDA, Sugar Annual India, pg. 3. avaibale at <https://apps.fas.usda.gov/newgainapi/api/Report/DownloadReportByFileName?fileName=Sugar%20Annual_New%20Delhi_India_IN2023-0035.pdf>. Reports of Government of Nepal claims that the recovery rate in neighboring states of India has recovery rate unto 12% (See [Sugarcane in Nepa](https://moald.gov.np/wp-content/uploads/2022/04/Sugarane-Development-in-Nepal.pdf)l pg. 32. )
+
+[^8]: This approximate difference of 18% is only if we are to discount direct government subsidy to farmers (which in FY 2020-21 is more than 1 billion at Nrs 65.28 per Quintal). If the government subsidy is incorporated in the cost of sugar production the difference would be more than 25%. Also, to be noted in this computation is that this report does not take in account SAP (Stated Advised Price) as practiced in few states of India which is higher than that of FRP (Fair and Remunerative Price).
+
+```{r}
+#| echo: false
+#| warning: false
+#| label: tbl-cost-sugar
+#| tbl-cap: Table with estimate of cost of sugar producing based on yield, recovery rate and government rates on sugarcane. 
+
+
+    compare_yield |> 
+      mutate(yield = yield *10) |> 
+      mutate(recovery = ifelse(country == "Nepal", 8.9, 10),
+             rate = ifelse(country == "Nepal", 479.05, rate)
+             ) |> 
+      mutate(revenue = yield*rate) |>
+      rowwise() |> 
+      #arrange(desc(revenue)) |> 
+      mutate(sugar = (recovery/100)* yield) |> 
+      mutate(sugar = round(sugar, 1)) |> 
+      mutate(per_quintal = revenue/sugar) |> 
+      select(1,2,4,5,6,7,8) |> 
+      (\(x) rename(x, "govt rate" = colnames(x)[3],
+                   "cost sugarcane" = colnames(x)[5],
+                   "recovery rate" = colnames(x)[4],
+                   "sugar produced" = colnames(x)[6],
+                   "cost of sugar" = colnames(x)[7]))() |> 
+      gt() |>
+      tab_header(
+        title = "Estimate of cost for sugarcane mills in producing sugar in India and Nepal based on data from 2020/21 [78-79]",
+        subtitle = "Yield in Quintal per hectare, cost of sugar is Nrs. per quintal of sugar"
+      ) |> 
+      opt_table_lines() |> 
+      tab_options(column_labels.background.color = "blue")
+      
+
+```
+
+2.  **Lower number of sugarcane being crushed in sugar mills in Nepal**
+
+    @fig-sugar-recovery clearly illustrates that lower amount of sugarcane compared to production is being crushed in the sugarmills in Nepal. This phenomenon needs to be studied separately to make an informed explanation.
+
+# Sugar Import
+
+@tbl-import-total below provides total sugar related items Nepal has imported in last 9 FY from FY 2071-72 to 2079-80[^9]. In this period Nepal imported total of 42 Arab worth of sugar related items. the item listed with HSCode 17011490 comprised of 68.56% (28.87 Arab in value) of total imports value in this period.
+
+[^9]: The import related data is obtained and curated from the website of Department of Customs. Available at <https://www.customs.gov.np/page/statistics>.
+
+```{r}
+#| echo: false
+#| warning: false
+#| label: tbl-import-total
+#| tbl-cap: Total imports of various sugar related items in last 9 FY with HsCode
+
+
+import_sugar |> 
+  #filter(fy %in% c("78-79", "75-76", "71-72", "73-74")) |> 
+  select(hscode, Description) |> 
+  distinct(hscode, .keep_all = TRUE) -> names_sugar
+  
+
+import_sugar |> 
+  filter(hscode != "12129300") |> 
+  mutate(Quantity = as.numeric(Quantity),
+         Imports_Value = as.numeric(Imports_Value),
+         Imports_Revenue = as.numeric(Imports_Revenue)) |> 
+ 
+  group_by(hscode) |> 
+  summarise(quantity = sum(Quantity),
+            value = sum(Imports_Value), .groups = "keep") |> 
+   
+  ungroup() |> 
+  mutate(value = round(value,2)) |> 
+  
+  mutate(percentage = value/sum(value) ) |> 
+  arrange(desc(percentage)) |> 
+  mutate(sn = row_number(),
+         .before = 1) |> 
+  rename("% of imported value" = "percentage") |> 
+  left_join(names_sugar, by = "hscode") |> 
+  select(1,2,6, 3:5) |> 
+  as.data.frame() |> 
+  gt() |> 
+   fmt_percent(
+    columns = 6,
+    decimals = 2
+  ) |> 
+   tab_header(
+        title = "Total imports of various items in last 9 FY (from FY 2071-72 to 2079-80)",
+        subtitle = "Quantity in Kg, and value in 1000s"
+      ) |> 
+      opt_table_lines() |> 
+      tab_options(column_labels.background.color = "blue") |> 
+  data_color(
+    columns = c(4:6),
+    fn = scales::col_numeric(
+      palette = c("white", "lightblue", "#1E90FF",  "#4169E1"
+        ),
+      domain = NULL)
+  )
+
+
+```
+
+::: {layout="[[65,-1,34]]"}
+```{r}
+#| echo: false
+#| warning: false
+#| label: fig-import-total
+#| fig-cap: Total imports and import values of sugar related items in last 9 FY
+import_sugar |> 
+  filter(hscode != "12129300") |> 
+  mutate(Quantity = as.numeric(Quantity),
+         Imports_Value = as.numeric(Imports_Value),
+         Imports_Revenue = as.numeric(Imports_Revenue)) |> 
+  mutate(fy = as.factor(fy)) |> 
+  group_by(fy) |>
+ summarise(quantity = sum(Quantity),
+            value = sum(Imports_Value), .groups = "keep") |> 
+
+   
+  ungroup() |> 
+  mutate(value = round(value/100,2), #value in lakh, quantity in tonnes
+         quantity = round(quantity/1000,2)
+         ) |> 
+   mutate(status = ifelse(fy %in% c("77-78", "78-79"), "covid-19", "normal")) |> 
+  as.data.frame() |> 
+
+  ggplot(aes(x = fy,
+             y = quantity,
+             fill = status
+             ))+
+  geom_col() +
+  scale_fill_manual(values=c("orange","forestgreen")) +
+  
+  geom_text(aes(x = fy,
+                y = quantity,
+                label = paste(round(
+                  quantity/1000,2
+                              ), "KT")
+                              ),
+            vjust = -0.2,
+            size = 2.5) +
+  
+ 
+  geom_text(aes(x = fy, 
+                y = value,
+    label = round(value/10000,1)),
+    colour ="white"
+    ) +
+  
+  geom_line(aes(
+    x = fy,
+    y = value,
+    group = 1
+  ),
+  linetype = 1,
+  colour = "red") +
+  scale_y_continuous(
+    
+    # Features of the first axis
+    name = "Quantity (in tonnes)",
+    
+    # Add a second axis and specify its features
+    sec.axis = sec_axis(~./10000, name="Price in arab (Nrs)")
+  ) +
+  theme_economist() +
+  labs(x = "",
+    title = "<b style='color: forestgreen'>Total Import of sugar related items </b>and <b style='color:red'>imported value (in Arab) </b>in various FY"
+  )+
+  theme(
+    legend.position = "bottom",
+    legend.title = element_blank(),
+    plot.title = element_markdown(
+      family = "Gill Sans",
+      size = 10
+    )
+  )
+
+
+
+```
+
+@fig-import-total illustrates that the import of sugar (and/or related items) in Nepal has an erratic trend. There has been a decreasing trend of total imports of sugar from FY 2077-78. In the figure, the bar plot represents the quantity of sugar (KT refers to Kilo Tonnes) and line plot denotes the value of import (in arab) in each FY.\
+\
+@tbl-total-demand below makes an attempt to estimate the total demand of sugar in the Nepal based on domestic production of sugarcane and imports in the given FY (the data on domestic production of sugar in Nepal is only available for two FY). However, because of limited sample size of domestic production of sugar, any attempt to estimate the yearly national sugar demand is not possible (based on the data available).
+:::
+
+## Total Demand of sugar based on internal production and trade data
+
+```{r}
+#| echo: false
+#| warning: false
+#| label: tbl-total-demand
+#| tbl-cap: Table with estimate of total demand of sugar in Nepal
+#| fig-width: 2
+
+import_sugar |> 
+  filter(hscode != "12129300") |> 
+
+  mutate(Quantity = as.numeric(Quantity),
+         Imports_Value = as.numeric(Imports_Value),
+         Imports_Revenue = as.numeric(Imports_Revenue)) |> 
+  mutate(fy = as.factor(fy)) |> 
+  group_by(fy) |>
+ summarise(quantity = sum(Quantity),
+            value = sum(Imports_Value), .groups = "keep") |> 
+
+   
+  ungroup() |> 
+  mutate(quantity = round(quantity/1000,2)
+         ) |> 
+  select(fy, quantity) |> 
+  left_join(
+    recovery |> 
+  group_by(FY) |> 
+  summarise(sugar = sum(Sugar)/10) |> 
+  ungroup() |> 
+  rename("fy" = "FY"),
+  by= "fy") |> 
+  filter(!is.na(sugar)) |> 
+  adorn_totals(where = "col") |> 
+  rename("imported" = "quantity",
+         "domestic"= "sugar") |> 
+  gt() |> 
+   tab_header(
+        title = "Estimate of total demand of sugar in Nepal based on available data on domestic production",
+        subtitle = "(values in tonnes)"
+      ) |> 
+      opt_table_lines() |> 
+      tab_options(column_labels.background.color = "blue")
+  
+
+```
+
+## Sugar and taxation
+
+::: {layout="[[60,-1,39]]"}
+```{r}
+#| echo: false
+#| warning: false
+#| label: fig-import-custom
+#| fig-cap: Total imports and yearly custom rates of major sugar related items in last 9 FY
+
+import_sugar |> 
+  select(-2) |> 
+  filter(hscode != "12129100") |> 
+  filter(hscode != "12129300") |> 
+  mutate(Quantity = as.numeric(Quantity),
+         Imports_Value = as.numeric(Imports_Value),
+         Imports_Revenue = as.numeric(Imports_Revenue)) |> 
+  mutate(fy = as.factor(fy)) |> 
+  select(1:7) |> 
+  group_by(hscode, fy) |> 
+  summarise(tquantity = sum(Quantity),
+         tvalue = sum(Imports_Value),
+         .groups = "keep") |>
+  left_join(
+    hssugar, by = "hscode"
+  ) |> 
+  as.data.frame() |> 
+  left_join(tax, by = c("hscode", "fy")) |> 
+  filter(hscode == "17011490") |>   
+  mutate(status = ifelse(fy %in% c("77-78", "78-79"), "covid-19", "normal")) |> 
+  as.data.frame() |> 
+
+  ggplot(
+    aes(x = fy,
+        y = tquantity/1000000,
+        fill = status
+        ) #in KT
+  ) +
+  geom_col() + 
+   scale_fill_manual(values=c("orange","forestgreen")) +
+   #geom_col(fill = "forestgreen") +
+  scale_y_continuous(
+    # Features of the first axis
+    name = "Quantity (in Kilo tonnes)",
+    # Add a second axis and specify its features
+    sec.axis = sec_axis(~./1, name="custom rate in %")
+  ) +
+  geom_line(
+    aes(x = fy, 
+        y = Other,
+        group = 1),
+    linewidth  = 1,
+    colour = "red"
+  ) +
+  geom_text(
+    aes(x = fy, 
+        y = Other,
+        label = paste(Other, "%", sep = "")),
+    vjust = -0.2,
+    size = 3.5,
+    colour = "black"
+  ) +
+  theme_economist() +
+   labs(x = "",
+    title = "<b style='color: forestgreen'>Total Import of major sugar related item (17011490) </b>and <b style='color:red'> custom rate </b>in various FY"
+  )+
+  theme(
+    legend.position = "bottom",
+    legend.title = element_blank(),
+    plot.title = element_markdown(
+      family = "Gill Sans",
+      size = 10
+    )
+  )
+
+
+```
+
+There has been a upward trend on custom rates on sugar in Nepal. As illustrated by @fig-import-custom the custom rate on sugar (items with HScode 17011490) was 40% which remained at only 15% up until FY 74-75. There is no evidence to suggests that rise in custom rates were in context of increasing domestic sugar production and therein to protect domestic industries.\
+Apart from a stark decrease of sugar import in FY 75-76 after increase of custom rates from 15% to 30%, the data itself does not provide clear evidence of impact of rise in custom rates in total imports of sugar. Government of Nepal have in various times provided a facility of custom free import of sugar to government owned entity which could explain non-conclusive relationship between rise of custom rates and its impact on sugar imports in Nepal.
+:::
+
+# Government Subsidy in Sugarcane farming in Nepal
+
+::: {layout="[[30,-1,69]]"}
+```{r}
+#| echo: false
+#| warning: false
+#| label: tbl-subsidy
+#| tbl-cap: Table government allocated subsidy (via budget speech)
+
+subsidy |> 
+  select(1,2,6) |> 
+  slice(1:5) |> 
+  mutate(Allocation = Allocation/10000000) |> 
+  rename("Subsidy (in Crore)" = Allocation) |> 
+  gt() |> 
+   tab_header(
+        title = "Amount of budget allocated in subsidy (direct cash transfer) for sugarcane farmers",
+        subtitle = "(values in Crore)"
+      ) |> 
+  opt_table_lines() |> 
+  tab_options(column_labels.background.color = "blue") |> 
+   data_color(
+    columns = 3,
+    fn = scales::col_numeric(
+      palette = c("white", "lightblue", "#1E90FF",  "#4169E1"
+        ),
+      domain = NULL)
+  )
+
+```
+
+In the FY 2075-76, Government of Nepal started to hand out direct cash subsidy to Farmers which was Nrs 65.28 per quintal (which later increased to Nrs 70 per quintal after FY 78-79). However, such subsidy during FY 2075-76 was not categorically mentioned in the budget speech (hence, it is avoided in this report). From the FY 76-77 onwards government of Nepal have categorically allocated subsidy for sugarcane farmers from the yearly budget presented in the parliament.\
+\
+Data on government subsidy for sugarcane farmer as illustrated in the the @tbl-subsidy is obtained and curated from yearly budget speech of the finance minister of Nepal. In last five fiscal year (starting from FY 2076-77) the GoN allocated total of **4.35 Billion** in direct cash transfer in form of subsidy. It is to be noted that actual disbursement of such subsidies has always remain higher than the allocated amount; each year more than 1 billion NRs is being handed out in cash subsidy to Sugarcane farmers by GoN.
+:::
+
+# Case Study - India
+
+India remains one of the world's leading producers of sugar. During the 2021-22, India produced 18.8% of total global sugar production. The latest reports from bodies of the Government of India suggest that the Indian sugar (and/or sugarcane) industry is supporting the livelihood of 50 million sugarcane farmers and generating around 500,000 direct employment opportunities in sugar mills[^10].
+
+[^10]: "Price Policy for Sugarcane 2023-24 Sugar season", Commission for Agricultural Costs and Prices, Government of India, November, 2022. Available at https://cacp.dacnet.nic.in/ViewQuestionare.aspx?Input=2&DocId=1&PageId=41&KeyId=820
+
+## Sugarcane Pricing Policy in India
+
+In India, the statutory provisions of Sugarcane (Control) Order, 1966 issued the Essential Commodities Act (ECA), 1955, govern the pricing of sugarcane. The concept of Statutory Minimum Price (SMP) was replaced with the 'Fair and Remunerative Price (FRP)' from 2009-10. To incentivise higher sugar recovery rate, the FRP is linked to a basic recovery rate of sugar, with a premium payable to farmers for higher recovery of sugar.
+
+The FRP is announced by the Central Government based on the recommendation of the Commission for Agricultural Costs and Prices (CACP) in consultation with the State Governments and after taking feedback from the associations of the sugar industry. The FRP takes into account the following factors:
+
+1.  Cost of production of sugarcane;
+
+2.  Return to the growers from alternative crops and the general trend of prices of agricultural commodities;
+
+3.  Availability of sugar to consumers at a fair price;
+
+4.  Price at which sugar produced from sugarcane is sold by sugar producers;
+
+5.  Recovery of sugar from sugarcane;
+
+6.  The realization made from the sale of by-products viz. Molasses, bagasse and press mud of their imputed values;
+
+7.  Reasonable margins for the growers of sugarcane on account of risk and profits.
+
+The FRP is linked to a basic recovery rate of sugar, with a premium payable to farmers for higher recoveries of sugar from sugarcane. The FRP for 2022-23 sugar season has been fixed at Rs (Indian currency) 305 per quintal linked to a basic recovery of 10.25% subject to a premium of Rs. 3.05 per quintal for each 0.1% increase of recovery over and above 10.25% and reduction in FRP at the same rate for each 0.1% decrease in the recovery rate till 9.5%. In cases where recovery is below 9.5%; such farmers will get Rs. 282.125 per quintal for sugarcane in the current season.
+
+| Sugar Season | FRP (Per Quintal) | Basic Recovery Level |
+|--------------|-------------------|----------------------|
+| 2009-10      | 129.84            | 9.5%                 |
+| 2010-11      | 139.12            | 9.5%                 |
+| 2011-12      | 145.00            | 9.5%                 |
+| 2012-13      | 170.00            | 9.5%                 |
+| 2013-14      | 210.00            | 9.5%                 |
+| 2014-15      | 220.00            | 9.5%                 |
+| 2015-16      | 230.00            | 9.5%                 |
+| 2016-17      | 230.00            | 9.5%                 |
+| 2017-18      | 255.00            | 9.5%                 |
+| 2018-19      | 275.00            | 10%                  |
+| 2019-20      | 275.00            | 10%                  |
+| 2020-21      | 285.00            | 10%                  |
+| 2021-22      | 290.00            | 10%                  |
+| 2022-23      | 305.00            | 10.25%               |
+| 2023-24      | 315.00            | 10.25%               |
+
+: FRP in India
+
+## Schemes under Sugar Development Fund (SDF)
+
+Government of India operated various schemes of financial assistance as loans to sugar mills under Sugar Development Fund Act, 1982 (which now has been cancelled effective September 2021)[^11]. Under such schemes of financial assistance, Government of India provided:
+
+[^11]: Department of Food & Public Distribution, Ministry of Consumer Affairs, Food & Public Distribution, Government of India, F.No. 11-68/2020-SDF, 21-09-2021. Available at chrome-<https://dfpd.gov.in/writereaddata/Portal/Magazine/ClosureofSchemes.pdf>
+
+1.  Loan for modernization/Rehabilitation.
+
+2.  Loan for sugarcane development.
+
+3.  Loan for potentially viable sick sugar undertaking.
+
+4.  Loan for production of anhydrous or Ethanol from Alcohol (or from Molasses).
+
+5.  Loan for conversion of existing ethanol plant into zero liquid discharge plant.
+
+6.  Loan for bagasse-based cogeneration plant.
+
+Such loans carried a concessional rate of interest at the rate 2% below the bank Rate[^12].
+
+[^12]: Details on schemes is available at <https://dfpd.gov.in/sdfbrief_c.htm>
+
+# Recommendation
+
+1.  **Regarding Pricing of sugarcane**
+
+    -   The existing policy framework for Pricing of sugarcane (or any agro product !) is weak and often arbitrary in nature. There should be an independent statutory body that would provide detail recommendation of prices (of sugarcane among other things) based on appropriate study to government of Nepal. Lets think of a body similar to Commission for Agricultural Costs and Prices in India.
+
+    -   Such policy framework (pricing of sugarcane) should categorically include factors based on which pricing of sugarcane should be determined. Among other things such as cost of production of sugarcane, it should include an assessment of relationship and/or risk in relations with the FRP in India. The current scenario is such that the farmer welfare (ensuring through minimum support price) and market efficiency of sugar production (based on minimum support price) is mutually exclusive given the disparity of pricing of sugar in India and Nepal together with lower yield rate in Nepal. There requires a comprehensive strategy to balance this disequilibrium.
+
+    -   The current procedure (उखु कृषकलाई अनुदान दिने कार्यविधि २०७५) though can be tweaked to strengthen and streamline the distribution of subsidy in short-term, it cannot be the primary policy instrument. the regulatory regime for price of sugarcane and other incentive related program should be legislated through non-delegated legislation.
+
+2.  **Regarding Cash Subsidies to Farmers**
+
+    -   The Cash subsidies to Farmers is a good initiative by the Government of Nepal. However, such initiative should have a categorical objective and should align to a larger sought policy objective. In *prima facia* the subsidies are not providing incentives for better yield and/or production and/or farming of sugarcane in Nepal. In contrast, as mentioned above there is a declining trend in total area of farming of sugarcane in Nepal in last few years.
+
+    -   The sugarcane industry in Nepal could easily run into to a risk of *Samaritan Dilemma*. Incentivized subsidy schemes should be introduced; subsidy could be tied with recovery rates of sugarcane.
+
+3.  **Regarding Sugarcane farming**
+
+    -   Develop a sugarcane policy with tangible targets for sugarcane production and yield rates.
+
+    -   Government should formulate special programs with incentives to farmers in districts with high yield rates. Tangible incentives to switch from other cash crops in high yield districts (such as those in *Sudur Paschim* Province).
+
+    -   Use of crop variant with yield rate.
+
+4.  **Regarding Sugar mills**
+
+    -   Government should design and implement special financial schemes for development, modernization and rehabilitation of sugar mills.
+
+    -   Conduct an independent due diligence and performance audit of all operating sugar mills. Such independent audit shall provide a clear picture of status of sugar mills and shall give ways for areas of work in sugar mills in Nepal.
