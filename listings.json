@@ -5,7 +5,8 @@
       "/posts/education-teacher-student-ratio/teacherstudentrati.html",
       "/posts/lalitpur3-electoral-landscape/electoral-landscape-lalit-3.html",
       "/posts/procurement-supplier-concentration/procurement_concentration.html",
-      "/posts/public-health/post1.html"
+      "/posts/public-health/post1.html",
+      "/posts/sugarcane/sugar.html"
     ]
   },
   {
@@ -19,7 +20,17 @@
     "items": [
       "/posts/education-teacher-student-ratio/teacherstudentrati.html",
       "/posts/lalitpur3-electoral-landscape/electoral-landscape-lalit-3.html",
-      "/posts/procurement-supplier-concentration/procurement_concentration.html"
+      "/posts/procurement-supplier-concentration/procurement_concentration.html",
+      "/posts/sugarcane/sugar.html"
+    ]
+  },
+  {
+    "listing": "/posts/sugarcane/sugar.html",
+    "items": [
+      "/posts/education-teacher-student-ratio/teacherstudentrati.html",
+      "/posts/lalitpur3-electoral-landscape/electoral-landscape-lalit-3.html",
+      "/posts/procurement-supplier-concentration/procurement_concentration.html",
+      "/posts/public-health/post1.html"
     ]
   },
   {
@@ -27,7 +38,8 @@
     "items": [
       "/posts/lalitpur3-electoral-landscape/electoral-landscape-lalit-3.html",
       "/posts/procurement-supplier-concentration/procurement_concentration.html",
-      "/posts/public-health/post1.html"
+      "/posts/public-health/post1.html",
+      "/posts/sugarcane/sugar.html"
     ]
   },
   {
@@ -35,7 +47,8 @@
     "items": [
       "/posts/education-teacher-student-ratio/teacherstudentrati.html",
       "/posts/lalitpur3-electoral-landscape/electoral-landscape-lalit-3.html",
-      "/posts/public-health/post1.html"
+      "/posts/public-health/post1.html",
+      "/posts/sugarcane/sugar.html"
     ]
   },
   {
@@ -43,7 +56,8 @@
     "items": [
       "/posts/education-teacher-student-ratio/teacherstudentrati.html",
       "/posts/procurement-supplier-concentration/procurement_concentration.html",
-      "/posts/public-health/post1.html"
+      "/posts/public-health/post1.html",
+      "/posts/sugarcane/sugar.html"
     ]
   },
   {
@@ -52,7 +66,8 @@
       "/posts/education-teacher-student-ratio/teacherstudentrati.html",
       "/posts/lalitpur3-electoral-landscape/electoral-landscape-lalit-3.html",
       "/posts/procurement-supplier-concentration/procurement_concentration.html",
-      "/posts/public-health/post1.html"
+      "/posts/public-health/post1.html",
+      "/posts/sugarcane/sugar.html"
     ]
   }
 ]
